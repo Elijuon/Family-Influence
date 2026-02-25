@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ВАШИ ДАННЫЕ (уже вставлены)
+// ВАШИ ДАННЫЕ
 const SUPABASE_URL = 'https://itcbseurweugqeibgdmy.supabase.co';
 const SUPABASE_SECRET = 'sb_secret_gPbZ9PLB1aOLRRSt2Tye2w_zVdi7_jq';
 const TELEGRAM_TOKEN = '8693344253:AAFz8yqVWIJ8nLvYqSkL0Pcrola6oTws2ok';
@@ -15,10 +15,12 @@ const TELEGRAM_TOKEN = '8693344253:AAFz8yqVWIJ8nLvYqSkL0Pcrola6oTws2ok';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET);
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
+// Эндпоинт для проверки здоровья (чтоб не засыпал)
 app.get('/health', (req, res) => {
   res.send('OK');
 });
 
+// АВТОРИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ
 app.post('/api/auth', async (req, res) => {
   const { telegram_id, first_name, last_name } = req.body;
   
@@ -40,6 +42,19 @@ app.post('/api/auth', async (req, res) => {
   res.json(user);
 });
 
+// ПОЛУЧЕНИЕ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ СЕМЬИ
+app.get('/api/users', async (req, res) => {
+  const { family_id } = req.query;
+  
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, telegram_id, first_name, last_name')
+    .eq('family_id', family_id);
+  
+  res.json(users || []);
+});
+
+// СОЗДАНИЕ СЕМЬИ
 app.post('/api/families', async (req, res) => {
   const { name, user_id } = req.body;
   const invite_code = Math.random().toString(36).substring(7);
@@ -58,6 +73,7 @@ app.post('/api/families', async (req, res) => {
   res.json({ ...family, invite_code });
 });
 
+// ПРИСОЕДИНЕНИЕ К СЕМЬЕ
 app.post('/api/families/join', async (req, res) => {
   const { invite_code, user_id } = req.body;
   
@@ -78,6 +94,7 @@ app.post('/api/families/join', async (req, res) => {
   }
 });
 
+// ПОЛУЧЕНИЕ ЗАДАЧ СЕМЬИ
 app.get('/api/tasks', async (req, res) => {
   const { family_id } = req.query;
   
@@ -85,24 +102,35 @@ app.get('/api/tasks', async (req, res) => {
     .from('tasks')
     .select(`
       *,
-      assignee:users!assignee_id(first_name, last_name),
-      creator:users!creator_id(first_name, last_name)
+      assignee:users!assignee_id(id, first_name, last_name),
+      creator:users!creator_id(id, first_name, last_name)
     `)
     .eq('family_id', family_id)
+    .eq('status', 'active')
     .order('deadline', { ascending: true });
   
   res.json(tasks);
 });
 
+// СОЗДАНИЕ ЗАДАЧИ
 app.post('/api/tasks', async (req, res) => {
   const { title, description, assignee_id, creator_id, family_id, deadline } = req.body;
   
   const { data: task } = await supabase
     .from('tasks')
-    .insert({ title, description, assignee_id, creator_id, family_id, deadline })
+    .insert({ 
+      title, 
+      description, 
+      assignee_id, 
+      creator_id, 
+      family_id, 
+      deadline,
+      status: 'active'
+    })
     .select()
     .single();
   
+  // Отправляем уведомление исполнителю
   const { data: user } = await supabase
     .from('users')
     .select('telegram_id')
@@ -120,6 +148,23 @@ app.post('/api/tasks', async (req, res) => {
   res.json(task);
 });
 
+// УДАЛЕНИЕ ЗАДАЧИ (для кнопок "Выполнено" и "Удалить")
+app.delete('/api/tasks/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    res.status(500).json({ error: error.message });
+  } else {
+    res.json({ success: true });
+  }
+});
+
+// ПОЛУЧЕНИЕ ЖЕЛАНИЙ СЕМЬИ
 app.get('/api/wishes', async (req, res) => {
   const { family_id } = req.query;
   
@@ -127,13 +172,15 @@ app.get('/api/wishes', async (req, res) => {
     .from('wishes')
     .select(`
       *,
-      user:users(first_name, last_name)
+      user:users(id, first_name, last_name)
     `)
-    .eq('family_id', family_id);
+    .eq('family_id', family_id)
+    .order('created_at', { ascending: false });
   
   res.json(wishes);
 });
 
+// ДОБАВЛЕНИЕ ЖЕЛАНИЯ
 app.post('/api/wishes', async (req, res) => {
   const { title, description, link, user_id, family_id } = req.body;
   
@@ -146,6 +193,7 @@ app.post('/api/wishes', async (req, res) => {
   res.json(wish);
 });
 
+// Обработка команды /start в боте
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(
