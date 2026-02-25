@@ -193,6 +193,22 @@ app.post('/api/wishes', async (req, res) => {
   res.json(wish);
 });
 
+// УДАЛЕНИЕ ЖЕЛАНИЯ (НОВЫЙ ЭНДПОИНТ!)
+app.delete('/api/wishes/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  const { error } = await supabase
+    .from('wishes')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    res.status(500).json({ error: error.message });
+  } else {
+    res.json({ success: true });
+  }
+});
+
 // Обработка команды /start в боте
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
