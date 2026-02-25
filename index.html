@@ -37,14 +37,6 @@
             color: #6b7280;
         }
         
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
         .button {
             padding: 12px 24px;
             border-radius: 8px;
@@ -78,12 +70,6 @@
             margin-top: 24px;
         }
         
-        .tasks-section h2 {
-            font-size: 18px;
-            color: #111827;
-            margin-bottom: 16px;
-        }
-        
         .section-header {
             display: flex;
             justify-content: space-between;
@@ -92,6 +78,8 @@
         }
         
         .section-header h2 {
+            font-size: 18px;
+            color: #111827;
             margin: 0;
         }
         
@@ -221,7 +209,6 @@
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             font-size: 14px;
-            font-family: inherit;
         }
         
         .modal-content textarea {
@@ -336,43 +323,33 @@
         let wishes = [];
         let familyMembers = [];
 
-        // Инициализация при загрузке страницы
         window.onload = async function() {
             showLoading();
             
-            // Инициализация Telegram WebApp
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.ready();
-                tg.expand(); // Разворачиваем на весь экран
+                tg.expand();
                 
-                // Получаем данные пользователя из Telegram
                 const tgUser = tg.initDataUnsafe?.user;
                 
                 if (tgUser) {
-                    console.log('Telegram user:', tgUser);
                     await authorizeUser(tgUser);
                 } else {
-                    // Для тестирования вне Telegram
-                    console.log('Не в Telegram, используем тестовые данные');
                     showNoFamilyScreen('Гость');
                 }
             } else {
-                // Для тестирования в браузере
-                console.log('Telegram WebApp не доступен');
                 showNoFamilyScreen('Гость');
             }
             
             hideLoading();
         };
 
-        // Показать экран без семьи для гостя
         function showNoFamilyScreen(name) {
             document.getElementById('greeting').textContent = `👋 Привет, ${name}!`;
             document.getElementById('no-family').classList.remove('hidden');
         }
 
-        // Авторизация пользователя
         async function authorizeUser(tgUser) {
             try {
                 const response = await fetch(`${API_URL}/api/auth`, {
@@ -385,12 +362,9 @@
                     })
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Ошибка авторизации');
-                }
+                if (!response.ok) throw new Error('Ошибка авторизации');
                 
                 currentUser = await response.json();
-                console.log('Авторизован:', currentUser);
                 
                 document.getElementById('greeting').textContent = `👋 Привет, ${currentUser.first_name}!`;
                 
@@ -405,12 +379,11 @@
                     document.getElementById('no-family').classList.remove('hidden');
                 }
             } catch (error) {
-                console.error('Ошибка авторизации:', error);
+                console.error('Ошибка:', error);
                 showNoFamilyScreen('Гость');
             }
         }
 
-        // Создание семьи
         window.createFamily = async function() {
             const name = prompt('Введите название семьи:');
             if (!name) return;
@@ -419,34 +392,26 @@
                 const response = await fetch(`${API_URL}/api/families`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        name, 
-                        user_id: currentUser.id 
-                    })
+                    body: JSON.stringify({ name, user_id: currentUser.id })
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Ошибка создания семьи');
-                }
+                if (!response.ok) throw new Error('Ошибка создания семьи');
                 
                 const data = await response.json();
                 currentFamily = { id: data.id };
                 
-                alert(`✅ Семья создана!\n\nКод для приглашения: ${data.invite_code}\n\nОтправьте этот код родным, чтобы они могли присоединиться.`);
+                alert(`✅ Семья создана! Код: ${data.invite_code}`);
                 
                 document.getElementById('no-family').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
                 
                 await loadTasks();
-                await loadWishes();
             } catch (error) {
-                console.error('Ошибка:', error);
                 alert('❌ Ошибка при создании семьи');
             }
         };
 
-        // Присоединение к семье
         window.joinFamily = async function() {
             const code = prompt('Введите код приглашения:');
             if (!code) return;
@@ -455,20 +420,15 @@
                 const response = await fetch(`${API_URL}/api/families/join`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        invite_code: code, 
-                        user_id: currentUser.id 
-                    })
+                    body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
                 });
                 
-                if (!response.ok) {
-                    throw new Error('Неверный код');
-                }
+                if (!response.ok) throw new Error('Неверный код');
                 
                 const data = await response.json();
                 currentFamily = { id: data.id };
                 
-                alert('✅ Вы успешно присоединились к семье!');
+                alert('✅ Вы присоединились к семье!');
                 
                 document.getElementById('no-family').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
@@ -477,78 +437,39 @@
                 await loadTasks();
                 await loadWishes();
             } catch (error) {
-                console.error('Ошибка:', error);
-                alert('❌ Неверный код приглашения');
+                alert('❌ Неверный код');
             }
         };
 
-        // Загрузка задач
         async function loadTasks() {
             if (!currentFamily) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
-                if (!response.ok) throw new Error('Ошибка загрузки задач');
-                
-                tasks = await response.json();
-                renderTasks();
-            } catch (error) {
-                console.error('Ошибка загрузки задач:', error);
-            }
+            const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
+            tasks = await response.json();
+            renderTasks();
         }
 
-        // Загрузка желаний
         async function loadWishes() {
             if (!currentFamily) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
-                if (!response.ok) throw new Error('Ошибка загрузки желаний');
-                
-                wishes = await response.json();
-                renderWishes();
-            } catch (error) {
-                console.error('Ошибка загрузки желаний:', error);
-            }
+            const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
+            wishes = await response.json();
+            renderWishes();
         }
 
-        // Загрузка членов семьи
         async function loadFamilyMembers() {
-            try {
-                // Пока просто добавляем текущего пользователя
-                familyMembers = [currentUser];
-                updateAssigneeSelect();
-            } catch (error) {
-                console.error('Ошибка загрузки членов семьи:', error);
-            }
+            familyMembers = [currentUser];
+            updateAssigneeSelect();
         }
 
-        // Обновление выпадающего списка исполнителей
         function updateAssigneeSelect() {
             const select = document.getElementById('task-assignee');
             select.innerHTML = '<option value="">Кто выполняет?</option>';
-            
-            if (familyMembers.length > 0) {
-                familyMembers.forEach(member => {
-                    const option = document.createElement('option');
-                    option.value = member.id;
-                    option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
-                    if (member.id === currentUser.id) {
-                        option.selected = true;
-                    }
-                    select.appendChild(option);
-                });
-            } else {
-                // Если список пуст, добавляем хотя бы себя
-                const option = document.createElement('option');
-                option.value = currentUser.id;
-                option.textContent = `${currentUser.first_name} (я)`;
-                option.selected = true;
-                select.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = currentUser.id;
+            option.textContent = `${currentUser.first_name} (я)`;
+            option.selected = true;
+            select.appendChild(option);
         }
 
-        // Создание задачи
         window.createTask = async function() {
             const title = document.getElementById('task-title').value;
             const description = document.getElementById('task-description').value;
@@ -556,123 +477,81 @@
             const deadline = document.getElementById('task-deadline').value;
             
             if (!title || !assigneeId || !deadline) {
-                alert('Заполните все обязательные поля');
+                alert('Заполните все поля');
                 return;
             }
             
-            try {
-                const response = await fetch(`${API_URL}/api/tasks`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title,
-                        description,
-                        assignee_id: parseInt(assigneeId),
-                        creator_id: currentUser.id,
-                        family_id: currentFamily.id,
-                        deadline: new Date(deadline).toISOString()
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Ошибка создания задачи');
-                
-                hideTaskForm();
-                await loadTasks();
-                
-                // Очищаем форму
-                document.getElementById('task-title').value = '';
-                document.getElementById('task-description').value = '';
-                document.getElementById('task-deadline').value = '';
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('❌ Ошибка при создании задачи');
-            }
+            await fetch(`${API_URL}/api/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title, description,
+                    assignee_id: parseInt(assigneeId),
+                    creator_id: currentUser.id,
+                    family_id: currentFamily.id,
+                    deadline: new Date(deadline).toISOString()
+                })
+            });
+            
+            hideTaskForm();
+            await loadTasks();
         };
 
-        // Создание желания
         window.createWish = async function() {
             const title = document.getElementById('wish-title').value;
             const description = document.getElementById('wish-description').value;
             const link = document.getElementById('wish-link').value;
             
             if (!title) {
-                alert('Введите название желания');
+                alert('Введите название');
                 return;
             }
             
-            try {
-                const response = await fetch(`${API_URL}/api/wishes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title,
-                        description,
-                        link,
-                        user_id: currentUser.id,
-                        family_id: currentFamily.id
-                    })
-                });
-                
-                if (!response.ok) throw new Error('Ошибка создания желания');
-                
-                hideWishForm();
-                await loadWishes();
-                
-                // Очищаем форму
-                document.getElementById('wish-title').value = '';
-                document.getElementById('wish-description').value = '';
-                document.getElementById('wish-link').value = '';
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('❌ Ошибка при создании желания');
-            }
+            await fetch(`${API_URL}/api/wishes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title, description, link,
+                    user_id: currentUser.id,
+                    family_id: currentFamily.id
+                })
+            });
+            
+            hideWishForm();
+            await loadWishes();
         };
 
-        // Отрисовка задач
         function renderTasks() {
             const list = document.getElementById('tasks-list');
-            
             if (tasks.length === 0) {
                 list.innerHTML = '<div class="empty-state">Пока нет задач</div>';
                 return;
             }
             
             list.innerHTML = tasks.map(task => {
-                const now = new Date();
-                const deadline = new Date(task.deadline);
-                const hoursLeft = (deadline - now) / (1000 * 60 * 60);
-                
-                let status;
-                if (hoursLeft < 0) {
-                    status = { color: '#ef4444', text: 'Просрочено' };
-                } else if (hoursLeft < 1) {
-                    status = { color: '#f97316', text: 'Меньше часа' };
-                } else if (hoursLeft < 3) {
-                    status = { color: '#eab308', text: 'Скоро' };
-                } else {
-                    status = { color: '#22c55e', text: 'В процессе' };
-                }
+                const hoursLeft = (new Date(task.deadline) - new Date()) / (1000 * 60 * 60);
+                let status = hoursLeft < 0 ? { color: '#ef4444', text: 'Просрочено' } :
+                            hoursLeft < 1 ? { color: '#f97316', text: 'Скоро' } :
+                            { color: '#22c55e', text: 'В процессе' };
                 
                 return `
                     <div class="task-item" style="border-left-color: ${status.color}">
                         <div class="task-header">
-                            <span class="task-title">${escapeHtml(task.title)}</span>
-                            <span class="task-status" style="background-color: ${status.color}">${status.text}</span>
+                            <span class="task-title">${task.title}</span>
+                            <span class="task-status" style="background: ${status.color}">${status.text}</span>
                         </div>
-                        ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                        ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                         <div class="task-meta">
-                            <span>👤 ${task.assignee?.first_name || 'Не назначен'}</span>
-                            <span>⏰ ${deadline.toLocaleString()}</span>
+                            <span>👤 ${task.assignee?.first_name || '?'}</span>
+                            <span>⏰ ${new Date(task.deadline).toLocaleString()}</span>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // Отрисовка желаний
         function renderWishes() {
             const list = document.getElementById('wishes-list');
-            
             if (wishes.length === 0) {
                 list.innerHTML = '<div class="empty-state">Пока нет желаний</div>';
                 return;
@@ -680,42 +559,21 @@
             
             list.innerHTML = wishes.map(wish => `
                 <div class="wish-item">
-                    <div class="wish-title">${escapeHtml(wish.title)}</div>
-                    ${wish.description ? `<div class="wish-description">${escapeHtml(wish.description)}</div>` : ''}
+                    <div class="wish-title">${wish.title}</div>
+                    ${wish.description ? `<div class="wish-description">${wish.description}</div>` : ''}
                     <div class="wish-footer">
-                        <span class="wish-meta">👤 ${wish.user?.first_name || 'Неизвестно'}</span>
-                        ${wish.link ? `<a href="${escapeHtml(wish.link)}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
+                        <span class="wish-meta">👤 ${wish.user?.first_name || '?'}</span>
+                        ${wish.link ? `<a href="${wish.link}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
                     </div>
                 </div>
             `).join('');
         }
 
-        // Защита от XSS
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        window.showTaskForm = () => document.getElementById('task-modal').classList.remove('hidden');
+        window.hideTaskForm = () => document.getElementById('task-modal').classList.add('hidden');
+        window.showWishForm = () => document.getElementById('wish-modal').classList.remove('hidden');
+        window.hideWishForm = () => document.getElementById('wish-modal').classList.add('hidden');
 
-        // Управление модальными окнами
-        window.showTaskForm = function() {
-            document.getElementById('task-modal').classList.remove('hidden');
-        };
-        
-        window.hideTaskForm = function() {
-            document.getElementById('task-modal').classList.add('hidden');
-        };
-        
-        window.showWishForm = function() {
-            document.getElementById('wish-modal').classList.remove('hidden');
-        };
-        
-        window.hideWishForm = function() {
-            document.getElementById('wish-modal').classList.add('hidden');
-        };
-
-        // Управление загрузкой
         function showLoading() {
             document.getElementById('loading').classList.remove('hidden');
         }
