@@ -11,6 +11,10 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
@@ -57,13 +61,24 @@
             z-index: 2;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
             padding: 20px 16px 0;
         }
 
-        /* Контент (вкладки) */
+        /* Контент (вкладки) занимает всё доступное место */
         .content {
             flex: 1;
+            overflow-y: auto;
+            padding-bottom: 12px;
+        }
+
+        /* Скрываем скроллбар для чистоты (опционально) */
+        .content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
         }
 
         .tab-content {
@@ -74,7 +89,7 @@
             display: block;
         }
 
-        /* Таб‑бар */
+        /* Таб‑бар всегда внизу */
         .tab-bar {
             display: flex;
             justify-content: space-around;
@@ -86,6 +101,7 @@
             padding: 8px 0;
             margin: 0 -16px;
             border-radius: 30px 30px 0 0;
+            flex-shrink: 0;
         }
 
         .tab-btn {
@@ -119,6 +135,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .families-counter {
@@ -134,9 +151,8 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Заголовок и статус */
         .title-section {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .title-section h1 {
@@ -157,7 +173,6 @@
             color: #ffffff;
         }
 
-        /* Разделы (Сегодня, Желания и т.д.) */
         .section-title {
             font-weight: 600;
             font-size: 15px;
@@ -167,7 +182,6 @@
             margin-bottom: 12px;
         }
 
-        /* Карточки (общее) */
         .task-card, .wish-item, .member-card, .settings-item {
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -450,9 +464,9 @@
             <button class="button secondary" onclick="joinFamily()">🔑 Присоединиться по коду</button>
         </div>
 
-        <!-- Основное приложение (есть семья) -->
+        <!-- Основное приложение -->
         <div id="main-app" class="hidden">
-            <!-- Верхняя панель (общая) -->
+            <!-- Верхняя панель -->
             <div class="top-bar">
                 <div class="families-counter" id="families-counter-main">
                     <span>👥</span>
@@ -460,7 +474,7 @@
                 </div>
             </div>
 
-            <!-- Контент (переключается вкладками) -->
+            <!-- Контент (скроллится) -->
             <div class="content">
                 <!-- Вкладка ЗАДАЧИ -->
                 <div id="tab-tasks" class="tab-content active">
@@ -471,9 +485,12 @@
                         </div>
                     </div>
 
-                    <div id="tasks-container">
-                        <!-- Сюда будут рендериться задачи -->
+                    <!-- Кнопка ТОЛЬКО для задач -->
+                    <div style="margin-bottom: 16px;">
+                        <button class="button small primary" onclick="showTaskForm()" style="width:100%;">➕ Новая задача</button>
                     </div>
+
+                    <div id="tasks-container"></div>
                 </div>
 
                 <!-- Вкладка ЖЕЛАНИЯ -->
@@ -485,9 +502,12 @@
                         </div>
                     </div>
 
-                    <div id="wishes-container">
-                        <!-- Сюда будут рендериться желания -->
+                    <!-- Кнопка ТОЛЬКО для желаний -->
+                    <div style="margin-bottom: 16px;">
+                        <button class="button small secondary" onclick="showWishForm()" style="width:100%;">🎁 Новое желание</button>
                     </div>
+
+                    <div id="wishes-container"></div>
                 </div>
 
                 <!-- Вкладка УЧАСТНИКИ -->
@@ -498,10 +518,7 @@
                             <span id="members-count">0</span> человек
                         </div>
                     </div>
-
-                    <div id="members-container">
-                        <!-- Сюда будут рендериться участники -->
-                    </div>
+                    <div id="members-container"></div>
                 </div>
 
                 <!-- Вкладка НАСТРОЙКИ -->
@@ -509,7 +526,6 @@
                     <div class="title-section">
                         <h1>Настройки</h1>
                     </div>
-
                     <div id="settings-container">
                         <div class="settings-item" onclick="showInviteCode()">
                             <span>🔑</span> Код приглашения
@@ -521,7 +537,7 @@
                 </div>
             </div>
 
-            <!-- Таб‑бар -->
+            <!-- Таб‑бар (всегда внизу) -->
             <div class="tab-bar">
                 <button class="tab-btn active" data-tab="tasks">
                     <span class="tab-icon">📋</span>
@@ -543,63 +559,37 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания задачи -->
+    <!-- Модальные окна (без изменений) -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новая задача</h3>
-            
             <div class="task-type-selector">
-                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">
-                    📅 Личная
-                </div>
-                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">
-                    ⏳ С дедлайном
-                </div>
+                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">📅 Личная</div>
+                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">⏳ С дедлайном</div>
             </div>
-            
             <input type="text" id="task-title" placeholder="Название задачи" required>
             <textarea id="task-description" placeholder="Описание (необязательно)" rows="2"></textarea>
-            
-            <select id="task-assignee" required>
-                <option value="">Кто выполняет?</option>
-            </select>
-            
+            <select id="task-assignee" required><option value="">Кто выполняет?</option></select>
             <div id="personal-task-block">
                 <div class="datetime-row">
                     <input type="date" id="task-date" required>
                     <div class="time-selectors">
-                        <select id="task-hour" required>
-                            <option value="">Час</option>
-                            <option value="0">00</option><option value="1">01</option><option value="2">02</option>
-                            <option value="3">03</option><option value="4">04</option><option value="5">05</option>
-                            <option value="6">06</option><option value="7">07</option><option value="8">08</option>
-                            <option value="9">09</option><option value="10">10</option><option value="11">11</option>
-                            <option value="12">12</option><option value="13">13</option><option value="14">14</option>
-                            <option value="15">15</option><option value="16">16</option><option value="17">17</option>
-                            <option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                            <option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                        </select>
-                        <select id="task-minute" required>
-                            <option value="">Мин</option>
-                            <option value="0">00</option><option value="10">10</option><option value="20">20</option>
-                            <option value="30">30</option><option value="40">40</option><option value="50">50</option>
-                        </select>
+                        <select id="task-hour" required><?php for($i=0;$i<24;$i++): ?><option value="<?=$i?>"><?=str_pad($i,2,'0',STR_PAD_LEFT)?></option><?php endfor; ?></select>
+                        <select id="task-minute" required><?php foreach([0,10,20,30,40,50] as $m): ?><option value="<?=$m?>"><?=str_pad($m,2,'0',STR_PAD_LEFT)?></option><?php endforeach; ?></select>
                     </div>
                 </div>
             </div>
-            
             <div id="deadline-task-block" class="hidden">
-                <div class="deadline-preset" style="display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 16px;">
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
                     <button class="button small" onclick="setDeadlinePreset('1h')">1 час</button>
                     <button class="button small" onclick="setDeadlinePreset('3h')">3 часа</button>
                     <button class="button small" onclick="setDeadlinePreset('day')">До конца дня</button>
                     <button class="button small" onclick="setDeadlinePreset('3days')">3 дня</button>
                     <button class="button small" onclick="setDeadlinePreset('week')">Неделя</button>
                 </div>
-                <div class="time-input-note" id="deadline-display" style="color: #90a0b0; font-size: 12px;">Срок: не выбран</div>
+                <div class="time-input-note" id="deadline-display" style="color:#90a0b0;font-size:12px;">Срок: не выбран</div>
                 <input type="hidden" id="task-deadline-value">
             </div>
-            
             <div class="modal-buttons">
                 <button class="button primary" onclick="createTask()">Создать</button>
                 <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
@@ -607,7 +597,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания желания -->
     <div id="wish-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новое желание</h3>
@@ -635,7 +624,6 @@
         let currentTaskType = 'personal';
         let selectedDeadlinePreset = null;
 
-        // Инициализация
         window.onload = async function() {
             showLoading();
             
@@ -645,11 +633,8 @@
                 tg.expand();
                 
                 const tgUser = tg.initDataUnsafe?.user;
-                if (tgUser) {
-                    await authorizeUser(tgUser);
-                } else {
-                    showNoFamilyScreen('Гость');
-                }
+                if (tgUser) await authorizeUser(tgUser);
+                else showNoFamilyScreen('Гость');
             } else {
                 showNoFamilyScreen('Гость');
             }
@@ -708,11 +693,7 @@
                     document.getElementById('no-family').classList.add('hidden');
                     document.getElementById('user-name-tasks').textContent = currentUser.first_name;
                     
-                    await Promise.all([
-                        loadTasks(),
-                        loadWishes(),
-                        loadFamilyMembers()
-                    ]);
+                    await Promise.all([loadTasks(), loadWishes(), loadFamilyMembers()]);
                 } else {
                     showNoFamilyScreen(currentUser.first_name);
                 }
@@ -735,13 +716,12 @@
         function renderFamilyMembers() {
             const container = document.getElementById('members-container');
             document.getElementById('members-count').textContent = familyMembers.length;
-            
-            container.innerHTML = familyMembers.map(member => `
+            container.innerHTML = familyMembers.map(m => `
                 <div class="member-card">
-                    <div class="member-avatar">${member.first_name[0]}</div>
+                    <div class="member-avatar">${m.first_name[0]}</div>
                     <div class="member-info">
-                        <div class="member-name">${member.first_name} ${member.last_name || ''}</div>
-                        <div class="member-role">${member.id === currentUser.id ? '⚡ Это вы' : '👤 Участник'}</div>
+                        <div class="member-name">${m.first_name} ${m.last_name || ''}</div>
+                        <div class="member-role">${m.id === currentUser.id ? '⚡ Это вы' : '👤 Участник'}</div>
                     </div>
                 </div>
             `).join('');
@@ -750,12 +730,12 @@
         function updateAssigneeSelect() {
             const select = document.getElementById('task-assignee');
             select.innerHTML = '<option value="">Кто выполняет?</option>';
-            familyMembers.forEach(member => {
-                const option = document.createElement('option');
-                option.value = member.id;
-                option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
-                if (member.id === currentUser.id) option.selected = true;
-                select.appendChild(option);
+            familyMembers.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = `${m.first_name} ${m.last_name || ''}`.trim();
+                if (m.id === currentUser.id) opt.selected = true;
+                select.appendChild(opt);
             });
         }
 
@@ -782,7 +762,6 @@
         function renderTasks() {
             const container = document.getElementById('tasks-container');
             const now = new Date();
-            
             const today = now.toDateString();
             const todayTasks = tasks.filter(t => new Date(t.deadline).toDateString() === today);
             const otherTasks = tasks.filter(t => new Date(t.deadline).toDateString() !== today);
@@ -794,18 +773,13 @@
             document.getElementById('overdue-count').textContent = overdueCount;
             
             let html = '<div class="section-title">Сегодня</div>';
-            
-            if (todayTasks.length === 0) {
-                html += '<div class="task-card">Нет задач на сегодня</div>';
-            } else {
-                todayTasks.forEach(task => html += renderTaskCard(task));
-            }
+            if (todayTasks.length === 0) html += '<div class="task-card">Нет задач на сегодня</div>';
+            else todayTasks.forEach(t => html += renderTaskCard(t));
             
             if (otherTasks.length > 0) {
-                html += '<div class="section-title" style="margin-top: 20px;">Остальные</div>';
-                otherTasks.forEach(task => html += renderTaskCard(task));
+                html += '<div class="section-title" style="margin-top:20px;">Остальные</div>';
+                otherTasks.forEach(t => html += renderTaskCard(t));
             }
-            
             container.innerHTML = html;
         }
 
@@ -827,7 +801,7 @@
                         <span>📅 ${deadline.toLocaleDateString()} · ${deadline.toLocaleTimeString().slice(0,5)}</span>
                         <span>👤 ${task.assignee?.first_name || '?'}</span>
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <div style="display:flex;gap:8px;margin-top:12px;">
                         ${isAssignee ? `<button class="button small" onclick="completeTask(${task.id})">✅ Выполнено</button>` : ''}
                         ${isCreator ? `<button class="button small" onclick="deleteTask(${task.id})">🗑️ Удалить</button>` : ''}
                     </div>
@@ -838,11 +812,10 @@
         function renderWishes() {
             const container = document.getElementById('wishes-container');
             document.getElementById('wishes-count').textContent = wishes.length;
-            
-            container.innerHTML = wishes.map(wish => `
+            container.innerHTML = wishes.map(w => `
                 <div class="wish-item">
-                    <span class="wish-title">${escapeHtml(wish.title)}</span>
-                    <span class="wish-author">${wish.user?.first_name || '?'}</span>
+                    <span class="wish-title">${escapeHtml(w.title)}</span>
+                    <span class="wish-author">${w.user?.first_name || '?'}</span>
                 </div>
             `).join('');
         }
@@ -850,259 +823,162 @@
         window.createFamily = async function() {
             const name = prompt('Название семьи:');
             if (!name) return;
-            
             try {
-                const response = await fetch(`${API_URL}/api/families`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, user_id: currentUser.id })
+                const r = await fetch(`${API_URL}/api/families`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({name, user_id:currentUser.id})
                 });
-                
-                const data = await response.json();
-                currentFamily = { id: data.id };
-                alert(`✅ Код: ${data.invite_code}`);
-                
+                const d = await r.json();
+                currentFamily = {id:d.id};
+                alert(`✅ Код: ${d.invite_code}`);
                 document.getElementById('no-family').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('user-name-tasks').textContent = currentUser.first_name;
-                
                 await loadTasks();
                 await loadFamilyMembers();
                 await loadFamiliesCount();
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+            } catch { alert('❌ Ошибка'); }
         };
 
         window.joinFamily = async function() {
             const code = prompt('Код приглашения:');
             if (!code) return;
-            
             try {
-                const response = await fetch(`${API_URL}/api/families/join`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+                const r = await fetch(`${API_URL}/api/families/join`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({invite_code:code, user_id:currentUser.id})
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    currentFamily = { id: data.id };
+                if (r.ok) {
+                    const d = await r.json();
+                    currentFamily = {id:d.id};
                     alert('✅ Присоединились!');
-                    
                     document.getElementById('no-family').classList.add('hidden');
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('user-name-tasks').textContent = currentUser.first_name;
-                    
                     await Promise.all([loadTasks(), loadWishes(), loadFamilyMembers()]);
-                } else {
-                    alert('❌ Неверный код');
-                }
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+                } else alert('❌ Неверный код');
+            } catch { alert('❌ Ошибка'); }
         };
 
-        window.setTaskType = function(type) {
-            currentTaskType = type;
-            document.getElementById('task-type-personal').classList.toggle('selected', type === 'personal');
-            document.getElementById('task-type-deadline').classList.toggle('selected', type === 'deadline');
-            document.getElementById('personal-task-block').classList.toggle('hidden', type !== 'personal');
-            document.getElementById('deadline-task-block').classList.toggle('hidden', type !== 'deadline');
-            if (type === 'deadline') setDeadlinePreset('day');
+        window.setTaskType = function(t) {
+            currentTaskType = t;
+            document.getElementById('task-type-personal').classList.toggle('selected',t==='personal');
+            document.getElementById('task-type-deadline').classList.toggle('selected',t==='deadline');
+            document.getElementById('personal-task-block').classList.toggle('hidden',t!=='personal');
+            document.getElementById('deadline-task-block').classList.toggle('hidden',t!=='deadline');
+            if(t==='deadline') setDeadlinePreset('day');
         };
 
-        window.setDeadlinePreset = function(preset) {
-            selectedDeadlinePreset = preset;
+        window.setDeadlinePreset = function(p) {
+            selectedDeadlinePreset = p;
             const now = new Date();
-            let deadline = new Date(now);
-            
-            switch(preset) {
-                case '1h': deadline.setHours(now.getHours() + 1); deadline.setMinutes(0,0,0); break;
-                case '3h': deadline.setHours(now.getHours() + 3); deadline.setMinutes(0,0,0); break;
-                case 'day': deadline.setHours(23,59,0,0); break;
-                case '3days': deadline.setDate(now.getDate() + 3); deadline.setHours(23,59,0,0); break;
-                case 'week': deadline.setDate(now.getDate() + 7); deadline.setHours(23,59,0,0); break;
-            }
-            
-            document.getElementById('task-deadline-value').value = deadline.toISOString();
-            document.getElementById('deadline-display').textContent = `Срок: ${deadline.toLocaleString()}`;
+            let d = new Date(now);
+            if(p==='1h'){ d.setHours(now.getHours()+1); d.setMinutes(0,0,0); }
+            if(p==='3h'){ d.setHours(now.getHours()+3); d.setMinutes(0,0,0); }
+            if(p==='day'){ d.setHours(23,59,0,0); }
+            if(p==='3days'){ d.setDate(now.getDate()+3); d.setHours(23,59,0,0); }
+            if(p==='week'){ d.setDate(now.getDate()+7); d.setHours(23,59,0,0); }
+            document.getElementById('task-deadline-value').value = d.toISOString();
+            document.getElementById('deadline-display').textContent = `Срок: ${d.toLocaleString()}`;
         };
 
         window.createTask = async function() {
             const title = document.getElementById('task-title').value;
-            const description = document.getElementById('task-description').value;
-            const assigneeId = document.getElementById('task-assignee').value;
-            
-            if (!title || !assigneeId) {
-                alert('Заполните название и выберите исполнителя');
-                return;
-            }
-            
+            const desc = document.getElementById('task-description').value;
+            const aid = document.getElementById('task-assignee').value;
+            if(!title||!aid) return alert('Заполните название и выберите исполнителя');
             let deadline;
-            if (currentTaskType === 'personal') {
-                const dateStr = document.getElementById('task-date').value;
-                const hourStr = document.getElementById('task-hour').value;
-                const minuteStr = document.getElementById('task-minute').value;
-                if (!dateStr || !hourStr || !minuteStr) {
-                    alert('Выберите дату и время');
-                    return;
-                }
-                const [year, month, day] = dateStr.split('-').map(Number);
-                deadline = new Date(year, month-1, day, parseInt(hourStr), parseInt(minuteStr), 0).toISOString();
+            if(currentTaskType==='personal'){
+                const ds = document.getElementById('task-date').value;
+                const hs = document.getElementById('task-hour').value;
+                const ms = document.getElementById('task-minute').value;
+                if(!ds||!hs||!ms) return alert('Выберите дату и время');
+                const [y,m,d] = ds.split('-').map(Number);
+                deadline = new Date(y,m-1,d,parseInt(hs),parseInt(ms),0).toISOString();
             } else {
-                if (!selectedDeadlinePreset) {
-                    alert('Выберите срок');
-                    return;
-                }
+                if(!selectedDeadlinePreset) return alert('Выберите срок');
                 deadline = document.getElementById('task-deadline-value').value;
             }
-            
             try {
                 await fetch(`${API_URL}/api/tasks`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title, description,
-                        assignee_id: parseInt(assigneeId),
-                        creator_id: currentUser.id,
-                        family_id: currentFamily.id,
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        title, description:desc,
+                        assignee_id:parseInt(aid),
+                        creator_id:currentUser.id,
+                        family_id:currentFamily.id,
                         deadline
                     })
                 });
-                
                 hideTaskForm();
                 await loadTasks();
-                resetTaskForm();
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+                document.getElementById('task-title').value='';
+                document.getElementById('task-description').value='';
+                document.getElementById('task-date').value='';
+                document.getElementById('task-hour').value='';
+                document.getElementById('task-minute').value='';
+                setTaskType('personal');
+            } catch { alert('❌ Ошибка'); }
         };
 
-        window.completeTask = async function(taskId) {
-            if (!confirm('Отметить задачу как выполненную?')) return;
-            try {
-                await fetch(`${API_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
-                await loadTasks();
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+        window.completeTask = async function(id) {
+            if(!confirm('Отметить задачу как выполненную?')) return;
+            try { await fetch(`${API_URL}/api/tasks/${id}`,{method:'DELETE'}); await loadTasks(); } 
+            catch { alert('❌ Ошибка'); }
         };
 
-        window.deleteTask = async function(taskId) {
-            if (!confirm('Удалить задачу?')) return;
-            try {
-                await fetch(`${API_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
-                await loadTasks();
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+        window.deleteTask = async function(id) {
+            if(!confirm('Удалить задачу?')) return;
+            try { await fetch(`${API_URL}/api/tasks/${id}`,{method:'DELETE'}); await loadTasks(); } 
+            catch { alert('❌ Ошибка'); }
         };
 
         window.createWish = async function() {
             const title = document.getElementById('wish-title').value;
-            const description = document.getElementById('wish-description').value;
+            const desc = document.getElementById('wish-description').value;
             const link = document.getElementById('wish-link').value;
-            
-            if (!title) {
-                alert('Введите название');
-                return;
-            }
-            
+            if(!title) return alert('Введите название');
             try {
                 await fetch(`${API_URL}/api/wishes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title, description, link,
-                        user_id: currentUser.id,
-                        family_id: currentFamily.id
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        title, description:desc, link,
+                        user_id:currentUser.id,
+                        family_id:currentFamily.id
                     })
                 });
-                
                 hideWishForm();
                 await loadWishes();
-                document.getElementById('wish-title').value = '';
-                document.getElementById('wish-description').value = '';
-                document.getElementById('wish-link').value = '';
-            } catch (error) {
-                alert('❌ Ошибка');
-            }
+                document.getElementById('wish-title').value='';
+                document.getElementById('wish-description').value='';
+                document.getElementById('wish-link').value='';
+            } catch { alert('❌ Ошибка'); }
         };
 
         window.showInviteCode = async function() {
             try {
-                const response = await fetch(`${API_URL}/api/families/${currentFamily.id}`);
-                const data = await response.json();
-                alert(`🔑 Код приглашения: ${data.invite_code}`);
-            } catch {
-                alert('Код пока недоступен');
-            }
+                const r = await fetch(`${API_URL}/api/families/${currentFamily.id}`);
+                const d = await r.json();
+                alert(`🔑 Код приглашения: ${d.invite_code}`);
+            } catch { alert('Код пока недоступен'); }
         };
 
         window.leaveFamily = function() {
-            if (confirm('Точно выйти из семьи?')) {
-                // Здесь логика выхода
-            }
+            if(confirm('Точно выйти из семьи?')) { /* логика */ }
         };
 
-        function resetTaskForm() {
-            document.getElementById('task-title').value = '';
-            document.getElementById('task-description').value = '';
-            document.getElementById('task-date').value = '';
-            document.getElementById('task-hour').value = '';
-            document.getElementById('task-minute').value = '';
-            setTaskType('personal');
-        }
+        window.showTaskForm = function() { updateAssigneeSelect(); document.getElementById('task-modal').classList.remove('hidden'); };
+        window.hideTaskForm = function() { document.getElementById('task-modal').classList.add('hidden'); };
+        window.showWishForm = function() { document.getElementById('wish-modal').classList.remove('hidden'); };
+        window.hideWishForm = function() { document.getElementById('wish-modal').classList.add('hidden'); };
 
-        window.showTaskForm = function() {
-            updateAssigneeSelect();
-            resetTaskForm();
-            document.getElementById('task-modal').classList.remove('hidden');
-        };
-        
-        window.hideTaskForm = function() {
-            document.getElementById('task-modal').classList.add('hidden');
-        };
-        
-        window.showWishForm = function() {
-            document.getElementById('wish-modal').classList.remove('hidden');
-        };
-        
-        window.hideWishForm = function() {
-            document.getElementById('wish-modal').classList.add('hidden');
-        };
-
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Добавляем кнопки добавления в интерфейс
-        setTimeout(() => {
-            const tasksTab = document.querySelector('[data-tab="tasks"]').parentElement;
-            const wishesTab = document.querySelector('[data-tab="wishes"]').parentElement;
-            
-            const addButtons = document.createElement('div');
-            addButtons.style.cssText = 'display: flex; gap: 8px; margin-bottom: 16px;';
-            addButtons.innerHTML = `
-                <button class="button small primary" onclick="showTaskForm()" style="flex:1;">➕ Задача</button>
-                <button class="button small secondary" onclick="showWishForm()" style="flex:1;">🎁 Желание</button>
-            `;
-            
-            document.getElementById('tab-tasks').insertBefore(addButtons.cloneNode(true), document.getElementById('tasks-container'));
-            document.getElementById('tab-wishes').insertBefore(addButtons, document.getElementById('wishes-container'));
-        }, 100);
+        function showLoading() { document.getElementById('loading').style.display = 'block'; }
+        function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+        function escapeHtml(t) { if(!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
     </script>
 </body>
 </html>
