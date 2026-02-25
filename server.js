@@ -94,6 +94,15 @@ app.post('/api/families/join', async (req, res) => {
   }
 });
 
+// ПОЛУЧЕНИЕ КОЛИЧЕСТВА СЕМЕЙ (НОВЫЙ ЭНДПОИНТ)
+app.get('/api/families/count', async (req, res) => {
+  const { count } = await supabase
+    .from('families')
+    .select('*', { count: 'exact', head: true });
+  
+  res.json({ count: count || 0 });
+});
+
 // ПОЛУЧЕНИЕ ЗАДАЧ СЕМЬИ
 app.get('/api/tasks', async (req, res) => {
   const { family_id } = req.query;
@@ -148,7 +157,7 @@ app.post('/api/tasks', async (req, res) => {
   res.json(task);
 });
 
-// УДАЛЕНИЕ ЗАДАЧИ (для кнопок "Выполнено" и "Удалить")
+// УДАЛЕНИЕ ЗАДАЧИ
 app.delete('/api/tasks/:id', async (req, res) => {
   const { id } = req.params;
   
@@ -193,7 +202,7 @@ app.post('/api/wishes', async (req, res) => {
   res.json(wish);
 });
 
-// УДАЛЕНИЕ ЖЕЛАНИЯ (НОВЫЙ ЭНДПОИНТ!)
+// УДАЛЕНИЕ ЖЕЛАНИЯ
 app.delete('/api/wishes/:id', async (req, res) => {
   const { id } = req.params;
   
