@@ -239,12 +239,10 @@
 </head>
 <body>
     <div id="app">
-        <!-- Загрузка -->
         <div id="loading" class="loading">
             <p>Загрузка...</p>
         </div>
 
-        <!-- Экран без семьи -->
         <div id="no-family" class="hidden">
             <div class="header">
                 <h1 id="greeting"></h1>
@@ -254,14 +252,12 @@
             <button class="button secondary" onclick="joinFamily()">🔑 Присоединиться по коду</button>
         </div>
 
-        <!-- Основное приложение (есть семья) -->
         <div id="main-app" class="hidden">
             <div class="header">
                 <h1>📋 Семейные дела</h1>
                 <p id="welcome-message"></p>
             </div>
 
-            <!-- Список задач -->
             <div class="tasks-section">
                 <div class="section-header">
                     <h2>📌 Задачи</h2>
@@ -270,7 +266,6 @@
                 <div id="tasks-list"></div>
             </div>
 
-            <!-- Список желаний -->
             <div class="tasks-section">
                 <div class="section-header">
                     <h2>🎁 Желания</h2>
@@ -280,7 +275,6 @@
             </div>
         </div>
 
-        <!-- Модальное окно создания задачи -->
         <div id="task-modal" class="modal hidden">
             <div class="modal-content">
                 <h3>Новая задача</h3>
@@ -297,7 +291,6 @@
             </div>
         </div>
 
-        <!-- Модальное окно создания желания -->
         <div id="wish-modal" class="modal hidden">
             <div class="modal-content">
                 <h3>Новое желание</h3>
@@ -314,18 +307,15 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Конфигурация
         const API_URL = 'https://family-influence-backend.onrender.com';
         
-        // Состояние приложения
         let currentUser = null;
         let currentFamily = null;
         let tasks = [];
         let wishes = [];
-        let familyMembers = [];
 
         window.onload = async function() {
-            showLoading();
+            document.getElementById('loading').classList.remove('hidden');
             
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
@@ -343,7 +333,7 @@
                 showNoFamilyScreen('Гость');
             }
             
-            hideLoading();
+            document.getElementById('loading').classList.add('hidden');
         };
 
         function showNoFamilyScreen(name) {
@@ -363,8 +353,6 @@
                     })
                 });
                 
-                if (!response.ok) throw new Error('Ошибка авторизации');
-                
                 currentUser = await response.json();
                 
                 document.getElementById('greeting').textContent = `👋 Привет, ${currentUser.first_name}!`;
@@ -373,14 +361,13 @@
                     currentFamily = { id: currentUser.family_id };
                     document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
                     document.getElementById('main-app').classList.remove('hidden');
+                    document.getElementById('no-family').classList.add('hidden');
                     await loadTasks();
                     await loadWishes();
-                    await loadFamilyMembers();
                 } else {
                     document.getElementById('no-family').classList.remove('hidden');
                 }
             } catch (error) {
-                console.error('Ошибка:', error);
                 showNoFamilyScreen('Гость');
             }
         }
@@ -389,157 +376,59 @@
             const name = prompt('Введите название семьи:');
             if (!name) return;
             
-            try {
-                const response = await fetch(`${API_URL}/api/families`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, user_id: currentUser.id })
-                });
-                
-                if (!response.ok) throw new Error('Ошибка создания семьи');
-                
-                const data = await response.json();
-                currentFamily = { id: data.id };
-                
-                alert(`✅ Семья создана!\n\nКод для приглашения: ${data.invite_code}\n\nОтправьте этот код родным, чтобы они могли присоединиться.`);
-                
-                document.getElementById('no-family').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
-                
-                await loadTasks();
-            } catch (error) {
-                alert('❌ Ошибка при создании семьи');
-            }
+            const response = await fetch(`${API_URL}/api/families`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, user_id: currentUser.id })
+            });
+            
+            const data = await response.json();
+            currentFamily = { id: data.id };
+            
+            alert(`✅ Код для приглашения: ${data.invite_code}`);
+            
+            document.getElementById('no-family').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
+            
+            await loadTasks();
         };
 
         window.joinFamily = async function() {
             const code = prompt('Введите код приглашения:');
             if (!code) return;
             
-            try {
-                const response = await fetch(`${API_URL}/api/families/join`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
-                });
-                
-                if (!response.ok) throw new Error('Неверный код');
-                
+            const response = await fetch(`${API_URL}/api/families/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+            });
+            
+            if (response.ok) {
                 const data = await response.json();
                 currentFamily = { id: data.id };
-                
-                alert('✅ Вы успешно присоединились к семье!');
-                
+                alert('✅ Вы присоединились к семье!');
                 document.getElementById('no-family').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
-                
                 await loadTasks();
                 await loadWishes();
-            } catch (error) {
-                alert('❌ Неверный код приглашения');
+            } else {
+                alert('❌ Неверный код');
             }
         };
 
         async function loadTasks() {
-            if (!currentFamily) return;
-            try {
-                const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
-                tasks = await response.json();
-                renderTasks();
-            } catch (error) {
-                console.error('Ошибка загрузки задач:', error);
-            }
+            const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
+            tasks = await response.json();
+            renderTasks();
         }
 
         async function loadWishes() {
-            if (!currentFamily) return;
-            try {
-                const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
-                wishes = await response.json();
-                renderWishes();
-            } catch (error) {
-                console.error('Ошибка загрузки желаний:', error);
-            }
+            const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
+            wishes = await response.json();
+            renderWishes();
         }
-
-        async function loadFamilyMembers() {
-            familyMembers = [currentUser];
-            updateAssigneeSelect();
-        }
-
-        function updateAssigneeSelect() {
-            const select = document.getElementById('task-assignee');
-            select.innerHTML = '<option value="">Кто выполняет?</option>';
-            const option = document.createElement('option');
-            option.value = currentUser.id;
-            option.textContent = `${currentUser.first_name} (я)`;
-            option.selected = true;
-            select.appendChild(option);
-        }
-
-        window.createTask = async function() {
-            const title = document.getElementById('task-title').value;
-            const description = document.getElementById('task-description').value;
-            const assigneeId = document.getElementById('task-assignee').value;
-            const deadline = document.getElementById('task-deadline').value;
-            
-            if (!title || !assigneeId || !deadline) {
-                alert('Заполните все обязательные поля');
-                return;
-            }
-            
-            try {
-                await fetch(`${API_URL}/api/tasks`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title,
-                        description,
-                        assignee_id: parseInt(assigneeId),
-                        creator_id: currentUser.id,
-                        family_id: currentFamily.id,
-                        deadline: new Date(deadline).toISOString()
-                    })
-                });
-                
-                hideTaskForm();
-                await loadTasks();
-            } catch (error) {
-                alert('❌ Ошибка при создании задачи');
-            }
-        };
-
-        window.createWish = async function() {
-            const title = document.getElementById('wish-title').value;
-            const description = document.getElementById('wish-description').value;
-            const link = document.getElementById('wish-link').value;
-            
-            if (!title) {
-                alert('Введите название желания');
-                return;
-            }
-            
-            try {
-                await fetch(`${API_URL}/api/wishes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title,
-                        description,
-                        link,
-                        user_id: currentUser.id,
-                        family_id: currentFamily.id
-                    })
-                });
-                
-                hideWishForm();
-                await loadWishes();
-            } catch (error) {
-                alert('❌ Ошибка при создании желания');
-            }
-        };
 
         function renderTasks() {
             const list = document.getElementById('tasks-list');
@@ -564,7 +453,7 @@
                         </div>
                         ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                         <div class="task-meta">
-                            <span>👤 ${task.assignee?.first_name || 'Не назначен'}</span>
+                            <span>👤 ${task.assignee?.first_name || '?'}</span>
                             <span>⏰ ${new Date(task.deadline).toLocaleString()}</span>
                         </div>
                     </div>
@@ -584,7 +473,7 @@
                     <div class="wish-title">${wish.title}</div>
                     ${wish.description ? `<div class="wish-description">${wish.description}</div>` : ''}
                     <div class="wish-footer">
-                        <span class="wish-meta">👤 ${wish.user?.first_name || 'Неизвестно'}</span>
+                        <span class="wish-meta">👤 ${wish.user?.first_name || '?'}</span>
                         ${wish.link ? `<a href="${wish.link}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
                     </div>
                 </div>
@@ -596,13 +485,52 @@
         window.showWishForm = () => document.getElementById('wish-modal').classList.remove('hidden');
         window.hideWishForm = () => document.getElementById('wish-modal').classList.add('hidden');
 
-        function showLoading() {
-            document.getElementById('loading').classList.remove('hidden');
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading').classList.add('hidden');
-        }
+        window.createTask = async function() {
+            const title = document.getElementById('task-title').value;
+            const description = document.getElementById('task-description').value;
+            const deadline = document.getElementById('task-deadline').value;
+            
+            if (!title || !deadline) return;
+            
+            await fetch(`${API_URL}/api/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    assignee_id: currentUser.id,
+                    creator_id: currentUser.id,
+                    family_id: currentFamily.id,
+                    deadline: new Date(deadline).toISOString()
+                })
+            });
+            
+            hideTaskForm();
+            await loadTasks();
+        };
+
+        window.createWish = async function() {
+            const title = document.getElementById('wish-title').value;
+            const description = document.getElementById('wish-description').value;
+            const link = document.getElementById('wish-link').value;
+            
+            if (!title) return;
+            
+            await fetch(`${API_URL}/api/wishes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    link,
+                    user_id: currentUser.id,
+                    family_id: currentFamily.id
+                })
+            });
+            
+            hideWishForm();
+            await loadWishes();
+        };
     </script>
 </body>
 </html>
