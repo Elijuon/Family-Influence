@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Семейные дела</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+        }
+        #app {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header { margin-bottom: 24px; }
+        .header h1 { font-size: 24px; color: #111827; margin-bottom: 8px; }
+        .header p { color: #6b7280; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .button.primary { background: #3b82f6; color: white; }
+        .button.secondary { background: #e5e7eb; color: #374151; }
+        .tasks-section { margin-top: 24px; }
+        .tasks-section h2 { font-size: 18px; margin-bottom: 16px; }
+        .task-item {
+            border-left: 4px solid;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .task-title { font-weight: 600; }
+        .task-status {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: white;
+        }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .hidden { display: none; }
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Загрузка -->
+        <div id="loading" class="loading">Загрузка...</div>
+
+        <!-- Экран без семьи -->
+        <div id="no-family" class="hidden">
+            <div class="header">
+                <h1 id="greeting"></h1>
+                <p>У вас пока нет семьи. Создайте новую или присоединитесь.</p>
+            </div>
+            <button class="button primary" onclick="createFamily()">👨‍👩‍👧‍👦 Создать семью</button>
+            <button class="button secondary" onclick="joinFamily()">🔑 Присоединиться по коду</button>
+        </div>
+
+        <!-- Основное приложение -->
+        <div id="main-app" class="hidden">
+            <div class="header">
+                <h1>📋 Семейные дела</h1>
+                <p id="welcome-message"></p>
+            </div>
+            <button class="button primary" onclick="showTaskForm()">➕ Добавить задачу</button>
+            <button class="button secondary" onclick="showWishForm()">🎁 Добавить желание</button>
+
+            <div class="tasks-section">
+                <h2>📌 Задачи</h2>
+                <div id="tasks-list"></div>
+            </div>
+            <div class="tasks-section">
+                <h2>🎁 Желания</h2>
+                <div id="wishes-list"></div>
+            </div>
+        </div>
+
+        <!-- Модалка задачи -->
+        <div id="task-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Новая задача</h3>
+                <input type="text" id="task-title" placeholder="Название задачи">
+                <textarea id="task-description" placeholder="Описание"></textarea>
+                <select id="task-assignee"><option value="">Кто выполняет?</option></select>
+                <input type="datetime-local" id="task-deadline">
+                <div style="display: flex; gap: 12px;">
+                    <button class="button primary" onclick="createTask()">Создать</button>
+                    <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка желания -->
+        <div id="wish-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Новое желание</h3>
+                <input type="text" id="wish-title" placeholder="Что хотите?">
+                <textarea id="wish-description" placeholder="Описание"></textarea>
+                <input type="url" id="wish-link" placeholder="Ссылка на товар">
+                <div style="display: flex; gap: 12px;">
+                    <button class="button primary" onclick="createWish()">Добавить</button>
+                    <button class="button secondary" onclick="hideWishForm()">Отмена</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const API_URL = 'https://family-influence-backend.onrender.com';
+        let currentUser = null, currentFamily = null, tasks = [], wishes = [], familyMembers = [];
+
+        window.onload = async function() {
+            document.getElementById('loading').classList.remove('hidden');
+            
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+                
+                const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+                if (tgUser) {
+                    await authorizeUser(tgUser);
+                }
+            }
+            document.getElementById('loading').classList.add('hidden');
+        };
+
+        async function authorizeUser(tgUser) {
+            try {
+                const res = await fetch(`${API_URL}/api/auth`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: tgUser.id,
+                        first_name: tgUser.first_name,
+                        last_name: tgUser.last_name || ''
+                    })
+                });
+                currentUser = await res.json();
+                
+                document.getElementById('greeting').textContent = `👋 Привет, ${currentUser.first_name}!`;
+                
+                if (currentUser.family_id) {
+                    currentFamily = { id: currentUser.family_id };
+                    document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
+                    document.getElementById('main-app').classList.remove('hidden');
+                    await loadTasks();
+                    await loadWishes();
+                } else {
+                    document.getElementById('no-family').classList.remove('hidden');
+                }
+            } catch (e) {
+                alert('Ошибка подключения к серверу');
+            }
+        }
+
+        async function createFamily() {
+            const name = prompt('Название семьи:');
+            if (!name) return;
+            
+            const res = await fetch(`${API_URL}/api/families`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, user_id: currentUser.id })
+            });
+            const data = await res.json();
+            currentFamily = { id: data.id };
+            alert(`✅ Код для приглашения: ${data.invite_code}`);
+            document.getElementById('no-family').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            await loadTasks();
+        }
+
+        async function joinFamily() {
+            const code = prompt('Код приглашения:');
+            if (!code) return;
+            
+            const res = await fetch(`${API_URL}/api/families/join`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+            });
+            if (res.ok) {
+                alert('✅ Вы присоединились к семье!');
+                document.getElementById('no-family').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                await loadTasks();
+            } else {
+                alert('❌ Неверный код');
+            }
+        }
+
+        async function loadTasks() {
+            const res = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
+            tasks = await res.json();
+            renderTasks();
+        }
+
+        async function loadWishes() {
+            const res = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
+            wishes = await res.json();
+            renderWishes();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = tasks.map(task => {
+                const now = new Date();
+                const deadline = new Date(task.deadline);
+                const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+                let status = hoursLeft < 0 ? { color: '#ef4444', text: 'Просрочено' } :
+                            hoursLeft < 1 ? { color: '#f97316', text: 'Меньше часа' } :
+                            { color: '#22c55e', text: 'В процессе' };
+                
+                return `
+                    <div class="task-item" style="border-left-color: ${status.color}">
+                        <div class="task-header">
+                            <span class="task-title">${task.title}</span>
+                            <span class="task-status" style="background: ${status.color}">${status.text}</span>
+                        </div>
+                        ${task.description ? `<p style="color: #6b7280; margin-bottom: 8px">${task.description}</p>` : ''}
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af">
+                            <span>👤 ${task.assignee?.first_name || '?'}</span>
+                            <span>⏰ ${new Date(task.deadline).toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderWishes() {
+            const list = document.getElementById('wishes-list');
+            list.innerHTML = wishes.map(wish => `
+                <div class="card">
+                    <div style="font-weight: 600; margin-bottom: 4px">${wish.title}</div>
+                    ${wish.description ? `<p style="color: #6b7280; margin-bottom: 8px">${wish.description}</p>` : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center">
+                        <span style="font-size: 12px; color: #9ca3af">👤 ${wish.user?.first_name}</span>
+                        ${wish.link ? `<a href="${wish.link}" target="_blank" style="color: #3b82f6">🔗 Ссылка</a>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.createFamily = createFamily;
+        window.joinFamily = joinFamily;
+        window.showTaskForm = () => document.getElementById('task-modal').classList.remove('hidden');
+        window.hideTaskForm = () => document.getElementById('task-modal').classList.add('hidden');
+        window.showWishForm = () => document.getElementById('wish-modal').classList.remove('hidden');
+        window.hideWishForm = () => document.getElementById('wish-modal').classList.add('hidden');
+
+        window.createTask = async () => {
+            const task = {
+                title: document.getElementById('task-title').value,
+                description: document.getElementById('task-description').value,
+                assignee_id: currentUser.id,
+                creator_id: currentUser.id,
+                family_id: currentFamily.id,
+                deadline: new Date(document.getElementById('task-deadline').value).toISOString()
+            };
+            await fetch(`${API_URL}/api/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            });
+            hideTaskForm();
+            await loadTasks();
+        };
+
+        window.createWish = async () => {
+            const wish = {
+                title: document.getElementById('wish-title').value,
+                description: document.getElementById('wish-description').value,
+                link: document.getElementById('wish-link').value,
+                user_id: currentUser.id,
+                family_id: currentFamily.id
+            };
+            await fetch(`${API_URL}/api/wishes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(wish)
+            });
+            hideWishForm();
+            await loadWishes();
+        };
+    </script>
+</body>
+</html>
