@@ -327,7 +327,7 @@
             </div>
 
             <!-- Список членов семьи -->
-            <div id="family-members-container" class="family-members hidden">
+            <div id="family-members-container" class="family-members">
                 <div class="family-members-title">👥 В семье:</div>
                 <div id="family-members-list" class="family-members-list"></div>
             </div>
@@ -459,63 +459,43 @@
                     showNoFamilyScreen(currentUser.first_name);
                 }
             } catch (error) {
+                console.error('Ошибка авторизации:', error);
                 showNoFamilyScreen('Гость');
             }
         }
 
-        // Загрузка членов семьи
+        // Загрузка членов семьи из БД
         async function loadFamilyMembers() {
             try {
-                // Получаем всех членов семьи из задач
-                const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
-                const allTasks = await response.json();
-                
-                // Собираем уникальных пользователей
-                const membersMap = new Map();
-                
-                allTasks.forEach(task => {
-                    if (task.assignee && !membersMap.has(task.assignee.id)) {
-                        membersMap.set(task.assignee.id, task.assignee);
-                    }
-                    if (task.creator && !membersMap.has(task.creator.id)) {
-                        membersMap.set(task.creator.id, task.creator);
-                    }
-                });
-                
-                // Добавляем текущего пользователя, если его нет
-                if (!membersMap.has(currentUser.id)) {
-                    membersMap.set(currentUser.id, {
-                        id: currentUser.id,
-                        first_name: currentUser.first_name,
-                        last_name: currentUser.last_name
-                    });
+                const response = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
+                if (response.ok) {
+                    familyMembers = await response.json();
+                } else {
+                    // Если эндпоинт не работает, используем текущего пользователя
+                    familyMembers = [currentUser];
                 }
-                
-                familyMembers = Array.from(membersMap.values());
-                
-                // Обновляем отображение
-                renderFamilyMembers();
-                updateAssigneeSelect();
             } catch (error) {
                 console.error('Ошибка загрузки членов семьи:', error);
                 familyMembers = [currentUser];
-                updateAssigneeSelect();
             }
+            
+            // Отображаем членов семьи
+            renderFamilyMembers();
+            // Обновляем выпадающий список
+            updateAssigneeSelect();
         }
 
         // Отображение членов семьи
         function renderFamilyMembers() {
-            const container = document.getElementById('family-members-container');
             const list = document.getElementById('family-members-list');
             
-            if (familyMembers.length > 1) {
-                container.classList.remove('hidden');
+            if (familyMembers.length > 0) {
                 list.innerHTML = familyMembers.map(member => {
                     const isMe = member.id === currentUser.id;
-                    return `<span class="family-member-badge">${member.first_name} ${isMe ? '(я)' : ''}</span>`;
+                    return `<span class="family-member-badge">${member.first_name} ${member.last_name || ''} ${isMe ? '(я)' : ''}</span>`;
                 }).join('');
             } else {
-                container.classList.add('hidden');
+                list.innerHTML = '<span class="family-member-badge">Загрузка...</span>';
             }
         }
 
@@ -524,15 +504,24 @@
             const select = document.getElementById('task-assignee');
             select.innerHTML = '<option value="">Кто выполняет?</option>';
             
-            familyMembers.forEach(member => {
+            if (familyMembers.length > 0) {
+                familyMembers.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member.id;
+                    option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
+                    if (member.id === currentUser.id) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            } else {
+                // Если список пуст, добавляем хотя бы себя
                 const option = document.createElement('option');
-                option.value = member.id;
-                option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
-                if (member.id === currentUser.id) {
-                    option.selected = true;
-                }
+                option.value = currentUser.id;
+                option.textContent = `${currentUser.first_name} (я)`;
+                option.selected = true;
                 select.appendChild(option);
-            });
+            }
         }
 
         // Загрузка задач
@@ -646,10 +635,7 @@
                 });
                 
                 hideTaskForm();
-                await Promise.all([
-                    loadTasks(),
-                    loadFamilyMembers() // Перезагружаем список членов семьи
-                ]);
+                await loadTasks();
                 
                 document.getElementById('task-title').value = '';
                 document.getElementById('task-description').value = '';
@@ -664,8 +650,6 @@
             if (!confirm('Отметить задачу как выполненную?')) return;
             
             try {
-                // В бэкенде нужно добавить эндпоинт для обновления статуса
-                // Пока просто удаляем задачу (или можно добавить статус)
                 await fetch(`${API_URL}/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
