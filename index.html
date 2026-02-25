@@ -63,18 +63,54 @@
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             background: var(--header-bg);
         }
         
-        .header-left h1 {
-            font-size: 24px;
-            color: var(--text-primary);
-            margin-bottom: 8px;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        .header-left p {
+        .families-counter {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--card-bg);
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            cursor: help;
+        }
+        
+        .families-counter:hover {
+            opacity: 1;
+        }
+        
+        .counter-icon {
+            font-size: 16px;
+        }
+        
+        .counter-number {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .header-text h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .header-text p {
             color: var(--text-secondary);
+            font-size: 14px;
         }
         
         .theme-toggle {
@@ -146,11 +182,6 @@
         
         .button.success {
             background: #22c55e;
-            color: white;
-        }
-        
-        .button.warning {
-            background: #f97316;
             color: white;
         }
         
@@ -513,8 +544,14 @@
         <div id="no-family" class="hidden">
             <div class="header">
                 <div class="header-left">
-                    <h1 id="greeting"></h1>
-                    <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+                    <div class="families-counter" id="families-counter-no-family" title="Всего семей в системе">
+                        <span class="counter-icon">👥</span>
+                        <span class="counter-number" id="families-count-no-family">0</span>
+                    </div>
+                    <div class="header-text">
+                        <h1 id="greeting"></h1>
+                        <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+                    </div>
                 </div>
                 <div class="theme-toggle">
                     <button class="theme-btn" onclick="setTheme('light')" id="theme-light-btn">☀️</button>
@@ -529,8 +566,14 @@
         <div id="main-app" class="hidden">
             <div class="header">
                 <div class="header-left">
-                    <h1>📋 Семейные дела</h1>
-                    <p id="welcome-message"></p>
+                    <div class="families-counter" id="families-counter-main" title="Всего семей в системе">
+                        <span class="counter-icon">👥</span>
+                        <span class="counter-number" id="families-count-main">0</span>
+                    </div>
+                    <div class="header-text">
+                        <h1>📋 Семейные дела</h1>
+                        <p id="welcome-message"></p>
+                    </div>
                 </div>
                 <div class="theme-toggle">
                     <button class="theme-btn" onclick="setTheme('light')" id="theme-light-btn">☀️</button>
@@ -680,14 +723,13 @@
         let familyMembers = [];
         
         // Состояние формы задачи
-        let currentTaskType = 'personal'; // 'personal' или 'deadline'
+        let currentTaskType = 'personal';
         let selectedDeadlinePreset = null;
 
         // Инициализация
         window.onload = async function() {
             showLoading();
             
-            // Загружаем сохраненную тему
             const savedTheme = localStorage.getItem('theme') || 'light';
             setTheme(savedTheme);
             
@@ -716,19 +758,34 @@
             body.classList.remove('light-theme', 'dark-theme');
             body.classList.add(theme + '-theme');
             
-            // Сохраняем в localStorage
             localStorage.setItem('theme', theme);
             
-            // Подсвечиваем активную кнопку
             document.getElementById('theme-light-btn').classList.toggle('active', theme === 'light');
             document.getElementById('theme-dark-btn').classList.toggle('active', theme === 'dark');
         };
+
+        // Загрузка количества семей
+        async function loadFamiliesCount() {
+            try {
+                const response = await fetch(`${API_URL}/api/families/count`);
+                const data = await response.json();
+                
+                // Обновляем оба счётчика (для главного экрана и экрана без семьи)
+                document.getElementById('families-count-main').textContent = data.count;
+                document.getElementById('families-count-no-family').textContent = data.count;
+            } catch (error) {
+                console.error('Ошибка загрузки количества семей:', error);
+            }
+        }
 
         // Показать экран создания семьи
         function showNoFamilyScreen(name) {
             document.getElementById('greeting').textContent = `👋 Привет, ${name}!`;
             document.getElementById('no-family').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
+            
+            // Загружаем счётчик семей
+            loadFamiliesCount();
         }
 
         // Авторизация
@@ -746,13 +803,15 @@
                 
                 currentUser = await response.json();
                 
+                // Загружаем счётчик семей
+                await loadFamiliesCount();
+                
                 if (currentUser.family_id) {
                     currentFamily = { id: currentUser.family_id };
                     document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('no-family').classList.add('hidden');
                     
-                    // Загружаем все данные
                     await Promise.all([
                         loadTasks(),
                         loadWishes(),
@@ -767,7 +826,7 @@
             }
         }
 
-        // Загрузка членов семьи из БД
+        // Загрузка членов семьи
         async function loadFamilyMembers() {
             try {
                 const response = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
@@ -785,7 +844,6 @@
             updateAssigneeSelect();
         }
 
-        // Отображение членов семьи
         function renderFamilyMembers() {
             const list = document.getElementById('family-members-list');
             
@@ -799,7 +857,6 @@
             }
         }
 
-        // Обновление выпадающего списка
         function updateAssigneeSelect() {
             const select = document.getElementById('task-assignee');
             select.innerHTML = '<option value="">Кто выполняет?</option>';
@@ -823,7 +880,6 @@
             }
         }
 
-        // Загрузка задач
         async function loadTasks() {
             try {
                 const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
@@ -834,7 +890,6 @@
             }
         }
 
-        // Загрузка желаний
         async function loadWishes() {
             try {
                 const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
@@ -845,50 +900,43 @@
             }
         }
 
-        // Управление типом задачи
         window.setTaskType = function(type) {
             currentTaskType = type;
             
-            // Обновляем выделение кнопок
             document.getElementById('task-type-personal').classList.toggle('selected', type === 'personal');
             document.getElementById('task-type-deadline').classList.toggle('selected', type === 'deadline');
             
-            // Показываем нужный блок
             document.getElementById('personal-task-block').classList.toggle('hidden', type !== 'personal');
             document.getElementById('deadline-task-block').classList.toggle('hidden', type !== 'deadline');
             
             if (type === 'deadline') {
-                setDeadlinePreset('day'); // По умолчанию "До конца дня"
+                setDeadlinePreset('day');
             }
         };
 
-        // Установка пресета дедлайна
         window.setDeadlinePreset = function(preset) {
             selectedDeadlinePreset = preset;
             
-            // Убираем выделение со всех кнопок
             document.querySelectorAll('.deadline-preset button').forEach(btn => {
                 btn.classList.remove('selected');
             });
             
-            // Подсвечиваем выбранную
             document.getElementById(`deadline-${preset}`).classList.add('selected');
             
-            // Рассчитываем дедлайн
             const now = new Date();
             let deadline = new Date(now);
             
             switch(preset) {
                 case '1h':
                     deadline.setHours(now.getHours() + 1);
-                    deadline.setMinutes(0, 0, 0); // Обнуляем минуты
+                    deadline.setMinutes(0, 0, 0);
                     break;
                 case '3h':
                     deadline.setHours(now.getHours() + 3);
                     deadline.setMinutes(0, 0, 0);
                     break;
                 case 'day':
-                    deadline.setHours(23, 59, 0, 0); // Конец текущего дня
+                    deadline.setHours(23, 59, 0, 0);
                     break;
                 case '3days':
                     deadline.setDate(now.getDate() + 3);
@@ -900,15 +948,12 @@
                     break;
             }
             
-            // Сохраняем значение
             document.getElementById('task-deadline-value').value = deadline.toISOString();
             
-            // Показываем пользователю
             const options = { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' };
             document.getElementById('deadline-display').textContent = `Срок: ${deadline.toLocaleString('ru', options)}`;
         };
 
-        // Создание семьи
         window.createFamily = async function() {
             const name = prompt('Введите название семьи:');
             if (!name) return;
@@ -931,12 +976,12 @@
                 
                 await loadTasks();
                 await loadFamilyMembers();
+                await loadFamiliesCount(); // Обновляем счётчик
             } catch (error) {
                 alert('❌ Ошибка при создании семьи');
             }
         };
 
-        // Присоединение к семье
         window.joinFamily = async function() {
             const code = prompt('Введите код приглашения:');
             if (!code) return;
@@ -970,7 +1015,6 @@
             }
         };
 
-        // Создание задачи
         window.createTask = async function() {
             const title = document.getElementById('task-title').value;
             const description = document.getElementById('task-description').value;
@@ -984,7 +1028,6 @@
             let deadline;
             
             if (currentTaskType === 'personal') {
-                // Личная задача: дата + час + минута
                 const dateStr = document.getElementById('task-date').value;
                 const hourStr = document.getElementById('task-hour').value;
                 const minuteStr = document.getElementById('task-minute').value;
@@ -1000,7 +1043,6 @@
                 
                 deadline = new Date(year, month - 1, day, hours, minutes, 0).toISOString();
             } else {
-                // Задача с дедлайном
                 if (!selectedDeadlinePreset) {
                     alert('Выберите срок выполнения');
                     return;
@@ -1026,7 +1068,6 @@
                 hideTaskForm();
                 await loadTasks();
                 
-                // Очищаем форму
                 document.getElementById('task-title').value = '';
                 document.getElementById('task-description').value = '';
                 document.getElementById('task-date').value = '';
@@ -1038,7 +1079,6 @@
             }
         };
 
-        // Завершение задачи
         window.completeTask = async function(taskId) {
             if (!confirm('Отметить задачу как выполненную?')) return;
             
@@ -1053,7 +1093,6 @@
             }
         };
 
-        // Удаление задачи
         window.deleteTask = async function(taskId) {
             if (!confirm('Удалить задачу?')) return;
             
@@ -1068,7 +1107,6 @@
             }
         };
 
-        // Создание желания
         window.createWish = async function() {
             const title = document.getElementById('wish-title').value;
             const description = document.getElementById('wish-description').value;
@@ -1103,7 +1141,6 @@
             }
         };
 
-        // Отметить желание как исполненное
         window.completeWish = async function(wishId) {
             if (!confirm('Отметить желание как исполненное?')) return;
             
@@ -1118,7 +1155,6 @@
             }
         };
 
-        // Удаление желания (только для создателя)
         window.deleteWish = async function(wishId) {
             if (!confirm('Удалить желание?')) return;
             
@@ -1133,7 +1169,6 @@
             }
         };
 
-        // Отрисовка задач
         function renderTasks() {
             const list = document.getElementById('tasks-list');
             
@@ -1150,12 +1185,10 @@
                 let status;
                 let typeBadge;
                 
-                // Определяем тип задачи по дедлайну (для старых задач)
                 const isPersonal = deadline.getHours() === 23 && deadline.getMinutes() === 59;
                 
                 if (isPersonal) {
                     typeBadge = '<span class="task-type-badge">📅 Личная</span>';
-                    // Для личных задач статус на основе даты
                     if (deadline < now) {
                         status = { color: '#ef4444', text: 'Прошла' };
                     } else {
@@ -1210,7 +1243,6 @@
             }).join('');
         }
 
-        // Отрисовка желаний
         function renderWishes() {
             const list = document.getElementById('wishes-list');
             
@@ -1231,7 +1263,6 @@
                             ${wish.link ? `<a href="${escapeHtml(wish.link)}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
                         </div>
                         
-                        <!-- Кнопки для желаний -->
                         <div class="wish-actions">
                             <button class="wish-action-button complete" onclick="completeWish(${wish.id})">
                                 ✅ Исполнено
@@ -1247,7 +1278,6 @@
             }).join('');
         }
 
-        // Защита от XSS
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -1255,10 +1285,9 @@
             return div.innerHTML;
         }
 
-        // Управление модальными окнами
         window.showTaskForm = function() {
             updateAssigneeSelect();
-            setTaskType('personal'); // По умолчанию личная задача
+            setTaskType('personal');
             document.getElementById('task-modal').classList.remove('hidden');
         };
         
