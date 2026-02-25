@@ -1104,4 +1104,183 @@
         };
 
         // Отметить желание как исполненное
-        window.completeWish = async function(wishId
+        window.completeWish = async function(wishId) {
+            if (!confirm('Отметить желание как исполненное?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/wishes/${wishId}`, {
+                    method: 'DELETE'
+                });
+                
+                await loadWishes();
+            } catch (error) {
+                alert('❌ Ошибка при отметке желания');
+            }
+        };
+
+        // Удаление желания (только для создателя)
+        window.deleteWish = async function(wishId) {
+            if (!confirm('Удалить желание?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/wishes/${wishId}`, {
+                    method: 'DELETE'
+                });
+                
+                await loadWishes();
+            } catch (error) {
+                alert('❌ Ошибка при удалении желания');
+            }
+        };
+
+        // Отрисовка задач
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            
+            if (tasks.length === 0) {
+                list.innerHTML = '<div class="empty-state">Пока нет задач</div>';
+                return;
+            }
+            
+            list.innerHTML = tasks.map(task => {
+                const now = new Date();
+                const deadline = new Date(task.deadline);
+                const hoursLeft = (deadline - now) / (1000 * 60 * 60);
+                
+                let status;
+                let typeBadge;
+                
+                // Определяем тип задачи по дедлайну (для старых задач)
+                const isPersonal = deadline.getHours() === 23 && deadline.getMinutes() === 59;
+                
+                if (isPersonal) {
+                    typeBadge = '<span class="task-type-badge">📅 Личная</span>';
+                    // Для личных задач статус на основе даты
+                    if (deadline < now) {
+                        status = { color: '#ef4444', text: 'Прошла' };
+                    } else {
+                        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+                        status = { color: '#3b82f6', text: `Осталось ${daysLeft} дн.` };
+                    }
+                } else {
+                    typeBadge = '<span class="task-type-badge">⏳ Дедлайн</span>';
+                    if (hoursLeft < 0) {
+                        status = { color: '#ef4444', text: 'Просрочено' };
+                    } else if (hoursLeft < 1) {
+                        status = { color: '#f97316', text: 'Меньше часа' };
+                    } else if (hoursLeft < 3) {
+                        status = { color: '#eab308', text: 'Скоро' };
+                    } else {
+                        status = { color: '#22c55e', text: 'В процессе' };
+                    }
+                }
+                
+                const isAssignee = task.assignee?.id === currentUser.id;
+                const isCreator = task.creator?.id === currentUser.id;
+                
+                return `
+                    <div class="task-item" style="border-left-color: ${status.color}">
+                        <div class="task-header">
+                            <span class="task-title">${escapeHtml(task.title)}</span>
+                            <span class="task-status" style="background: ${status.color}">${status.text}</span>
+                        </div>
+                        ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
+                        <div class="task-meta">
+                            <span>${typeBadge} 👤 ${task.assignee?.first_name || '?'} ${task.assignee?.id === currentUser.id ? '(я)' : ''}</span>
+                        </div>
+                        <div class="task-meta">
+                            <span>📅 ${deadline.toLocaleString()}</span>
+                            <span>✍️ ${task.creator?.first_name || '?'}</span>
+                        </div>
+                        
+                        <div class="task-actions">
+                            ${isAssignee ? `
+                                <button class="task-action-button complete" onclick="completeTask(${task.id})">
+                                    ✅ Выполнено
+                                </button>
+                            ` : ''}
+                            ${isCreator ? `
+                                <button class="task-action-button delete" onclick="deleteTask(${task.id})">
+                                    🗑️ Удалить
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Отрисовка желаний
+        function renderWishes() {
+            const list = document.getElementById('wishes-list');
+            
+            if (wishes.length === 0) {
+                list.innerHTML = '<div class="empty-state">Пока нет желаний</div>';
+                return;
+            }
+            
+            list.innerHTML = wishes.map(wish => {
+                const isCreator = wish.user?.id === currentUser.id;
+                
+                return `
+                    <div class="wish-item">
+                        <div class="wish-title">${escapeHtml(wish.title)}</div>
+                        ${wish.description ? `<div class="wish-description">${escapeHtml(wish.description)}</div>` : ''}
+                        <div class="wish-footer">
+                            <span class="wish-meta">👤 ${wish.user?.first_name || '?'}</span>
+                            ${wish.link ? `<a href="${escapeHtml(wish.link)}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
+                        </div>
+                        
+                        <!-- Кнопки для желаний -->
+                        <div class="wish-actions">
+                            <button class="wish-action-button complete" onclick="completeWish(${wish.id})">
+                                ✅ Исполнено
+                            </button>
+                            ${isCreator ? `
+                                <button class="wish-action-button delete" onclick="deleteWish(${wish.id})">
+                                    🗑️ Удалить
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Защита от XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Управление модальными окнами
+        window.showTaskForm = function() {
+            updateAssigneeSelect();
+            setTaskType('personal'); // По умолчанию личная задача
+            document.getElementById('task-modal').classList.remove('hidden');
+        };
+        
+        window.hideTaskForm = function() {
+            document.getElementById('task-modal').classList.add('hidden');
+        };
+        
+        window.showWishForm = function() {
+            document.getElementById('wish-modal').classList.remove('hidden');
+        };
+        
+        window.hideWishForm = function() {
+            document.getElementById('wish-modal').classList.add('hidden');
+        };
+
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
