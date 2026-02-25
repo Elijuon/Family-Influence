@@ -13,8 +13,44 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #f3f4f6;
+            background: var(--bg-color);
             min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        /* Светлая тема (по умолчанию) */
+        body.light-theme {
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --button-secondary-bg: #e5e7eb;
+            --button-secondary-text: #374151;
+            --badge-bg: #e5e7eb;
+            --badge-text: #374151;
+            --header-bg: #f3f4f6;
+        }
+        
+        /* Тёмная тема */
+        body.dark-theme {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #737373;
+            --border-color: #404040;
+            --button-secondary-bg: #404040;
+            --button-secondary-text: #e0e0e0;
+            --badge-bg: #404040;
+            --badge-text: #e0e0e0;
+            --header-bg: #1a1a1a;
+        }
+        
+        body {
+            background: var(--bg-color);
+            color: var(--text-primary);
         }
         
         #app {
@@ -25,16 +61,53 @@
         
         .header {
             margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--header-bg);
         }
         
-        .header h1 {
+        .header-left h1 {
             font-size: 24px;
-            color: #111827;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
         
-        .header p {
-            color: #6b7280;
+        .header-left p {
+            color: var(--text-secondary);
+        }
+        
+        .theme-toggle {
+            display: flex;
+            gap: 8px;
+            background: var(--card-bg);
+            padding: 4px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .theme-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        
+        .theme-btn.active {
+            background: var(--button-secondary-bg);
+            color: var(--text-primary);
+        }
+        
+        .theme-btn:hover {
+            background: var(--button-secondary-bg);
         }
         
         .button {
@@ -55,8 +128,8 @@
         }
         
         .button.secondary {
-            background: #e5e7eb;
-            color: #374151;
+            background: var(--button-secondary-bg);
+            color: var(--button-secondary-text);
         }
         
         .button.small {
@@ -94,14 +167,14 @@
         
         .section-header h2 {
             font-size: 18px;
-            color: #111827;
+            color: var(--text-primary);
             margin: 0;
         }
         
         .task-item {
             border-left: 4px solid;
             padding: 12px;
-            background: white;
+            background: var(--card-bg);
             border-radius: 8px;
             margin-bottom: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -116,7 +189,7 @@
         
         .task-title {
             font-weight: 600;
-            color: #111827;
+            color: var(--text-primary);
         }
         
         .task-status {
@@ -127,7 +200,7 @@
         }
         
         .task-description {
-            color: #6b7280;
+            color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 8px;
         }
@@ -137,7 +210,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--text-muted);
             margin-bottom: 8px;
         }
         
@@ -170,14 +243,14 @@
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 12px;
-            background: #e5e7eb;
-            color: #374151;
+            background: var(--badge-bg);
+            color: var(--badge-text);
             display: inline-block;
             margin-right: 8px;
         }
         
         .wish-item {
-            background: white;
+            background: var(--card-bg);
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 12px;
@@ -186,12 +259,12 @@
         
         .wish-title {
             font-weight: 600;
-            color: #111827;
+            color: var(--text-primary);
             margin-bottom: 4px;
         }
         
         .wish-description {
-            color: #6b7280;
+            color: var(--text-secondary);
             font-size: 14px;
             margin-bottom: 12px;
         }
@@ -204,7 +277,7 @@
         
         .wish-meta {
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--text-muted);
         }
         
         .wish-link {
@@ -242,7 +315,7 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #6b7280;
+            color: var(--text-secondary);
         }
         
         .hidden {
@@ -264,7 +337,7 @@
         }
         
         .modal-content {
-            background: white;
+            background: var(--card-bg);
             border-radius: 12px;
             padding: 20px;
             width: 100%;
@@ -276,6 +349,7 @@
         .modal-content h3 {
             margin-bottom: 16px;
             font-size: 18px;
+            color: var(--text-primary);
         }
         
         .modal-content input,
@@ -284,10 +358,12 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 12px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             font-size: 14px;
             font-family: inherit;
+            background: var(--card-bg);
+            color: var(--text-primary);
         }
         
         .modal-content textarea {
@@ -307,15 +383,15 @@
         }
         
         .empty-state {
-            color: #9ca3af;
+            color: var(--text-muted);
             text-align: center;
             padding: 20px;
-            background: white;
+            background: var(--card-bg);
             border-radius: 8px;
         }
         
         .family-members {
-            background: white;
+            background: var(--card-bg);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 16px;
@@ -325,7 +401,7 @@
         .family-members-title {
             font-weight: 600;
             margin-bottom: 8px;
-            color: #374151;
+            color: var(--text-primary);
         }
         
         .family-members-list {
@@ -335,11 +411,11 @@
         }
         
         .family-member-badge {
-            background: #e5e7eb;
+            background: var(--badge-bg);
             padding: 4px 12px;
             border-radius: 16px;
             font-size: 12px;
-            color: #374151;
+            color: var(--badge-text);
         }
         
         .task-type-selector {
@@ -352,10 +428,11 @@
             flex: 1;
             padding: 10px;
             text-align: center;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            color: var(--text-secondary);
         }
         
         .task-type-option.selected {
@@ -373,15 +450,16 @@
         
         .deadline-preset button {
             padding: 8px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            background: white;
+            background: var(--card-bg);
             cursor: pointer;
             font-size: 13px;
+            color: var(--text-primary);
         }
         
         .deadline-preset button:hover {
-            background: #f3f4f6;
+            background: var(--badge-bg);
         }
         
         .deadline-preset button.selected {
@@ -392,7 +470,7 @@
         
         .time-input-note {
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--text-muted);
             margin-top: -8px;
             margin-bottom: 12px;
         }
@@ -405,6 +483,9 @@
         
         .datetime-row input[type="date"] {
             flex: 2;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
         
         .time-selectors {
@@ -415,10 +496,13 @@
         
         .time-selectors select {
             flex: 1;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
-<body>
+<body class="light-theme">
     <div id="app">
         <!-- Загрузка -->
         <div id="loading" class="loading">
@@ -428,8 +512,14 @@
         <!-- Экран без семьи -->
         <div id="no-family" class="hidden">
             <div class="header">
-                <h1 id="greeting"></h1>
-                <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+                <div class="header-left">
+                    <h1 id="greeting"></h1>
+                    <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+                </div>
+                <div class="theme-toggle">
+                    <button class="theme-btn" onclick="setTheme('light')" id="theme-light-btn">☀️</button>
+                    <button class="theme-btn" onclick="setTheme('dark')" id="theme-dark-btn">🌙</button>
+                </div>
             </div>
             <button class="button primary" onclick="createFamily()">👨‍👩‍👧‍👦 Создать семью</button>
             <button class="button secondary" onclick="joinFamily()">🔑 Присоединиться по коду</button>
@@ -438,8 +528,14 @@
         <!-- Основное приложение -->
         <div id="main-app" class="hidden">
             <div class="header">
-                <h1>📋 Семейные дела</h1>
-                <p id="welcome-message"></p>
+                <div class="header-left">
+                    <h1>📋 Семейные дела</h1>
+                    <p id="welcome-message"></p>
+                </div>
+                <div class="theme-toggle">
+                    <button class="theme-btn" onclick="setTheme('light')" id="theme-light-btn">☀️</button>
+                    <button class="theme-btn" onclick="setTheme('dark')" id="theme-dark-btn">🌙</button>
+                </div>
             </div>
 
             <!-- Список членов семьи -->
@@ -591,6 +687,10 @@
         window.onload = async function() {
             showLoading();
             
+            // Загружаем сохраненную тему
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+            
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.ready();
@@ -608,6 +708,20 @@
             }
             
             hideLoading();
+        };
+
+        // Управление темой
+        window.setTheme = function(theme) {
+            const body = document.body;
+            body.classList.remove('light-theme', 'dark-theme');
+            body.classList.add(theme + '-theme');
+            
+            // Сохраняем в localStorage
+            localStorage.setItem('theme', theme);
+            
+            // Подсвечиваем активную кнопку
+            document.getElementById('theme-light-btn').classList.toggle('active', theme === 'light');
+            document.getElementById('theme-dark-btn').classList.toggle('active', theme === 'dark');
         };
 
         // Показать экран создания семьи
@@ -990,183 +1104,4 @@
         };
 
         // Отметить желание как исполненное
-        window.completeWish = async function(wishId) {
-            if (!confirm('Отметить желание как исполненное?')) return;
-            
-            try {
-                await fetch(`${API_URL}/api/wishes/${wishId}`, {
-                    method: 'DELETE'
-                });
-                
-                await loadWishes();
-            } catch (error) {
-                alert('❌ Ошибка при отметке желания');
-            }
-        };
-
-        // Удаление желания (только для создателя)
-        window.deleteWish = async function(wishId) {
-            if (!confirm('Удалить желание?')) return;
-            
-            try {
-                await fetch(`${API_URL}/api/wishes/${wishId}`, {
-                    method: 'DELETE'
-                });
-                
-                await loadWishes();
-            } catch (error) {
-                alert('❌ Ошибка при удалении желания');
-            }
-        };
-
-        // Отрисовка задач
-        function renderTasks() {
-            const list = document.getElementById('tasks-list');
-            
-            if (tasks.length === 0) {
-                list.innerHTML = '<div class="empty-state">Пока нет задач</div>';
-                return;
-            }
-            
-            list.innerHTML = tasks.map(task => {
-                const now = new Date();
-                const deadline = new Date(task.deadline);
-                const hoursLeft = (deadline - now) / (1000 * 60 * 60);
-                
-                let status;
-                let typeBadge;
-                
-                // Определяем тип задачи по дедлайну (для старых задач)
-                const isPersonal = deadline.getHours() === 23 && deadline.getMinutes() === 59;
-                
-                if (isPersonal) {
-                    typeBadge = '<span class="task-type-badge">📅 Личная</span>';
-                    // Для личных задач статус на основе даты
-                    if (deadline < now) {
-                        status = { color: '#ef4444', text: 'Прошла' };
-                    } else {
-                        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-                        status = { color: '#3b82f6', text: `Осталось ${daysLeft} дн.` };
-                    }
-                } else {
-                    typeBadge = '<span class="task-type-badge">⏳ Дедлайн</span>';
-                    if (hoursLeft < 0) {
-                        status = { color: '#ef4444', text: 'Просрочено' };
-                    } else if (hoursLeft < 1) {
-                        status = { color: '#f97316', text: 'Меньше часа' };
-                    } else if (hoursLeft < 3) {
-                        status = { color: '#eab308', text: 'Скоро' };
-                    } else {
-                        status = { color: '#22c55e', text: 'В процессе' };
-                    }
-                }
-                
-                const isAssignee = task.assignee?.id === currentUser.id;
-                const isCreator = task.creator?.id === currentUser.id;
-                
-                return `
-                    <div class="task-item" style="border-left-color: ${status.color}">
-                        <div class="task-header">
-                            <span class="task-title">${escapeHtml(task.title)}</span>
-                            <span class="task-status" style="background: ${status.color}">${status.text}</span>
-                        </div>
-                        ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
-                        <div class="task-meta">
-                            <span>${typeBadge} 👤 ${task.assignee?.first_name || '?'} ${task.assignee?.id === currentUser.id ? '(я)' : ''}</span>
-                        </div>
-                        <div class="task-meta">
-                            <span>📅 ${deadline.toLocaleString()}</span>
-                            <span>✍️ ${task.creator?.first_name || '?'}</span>
-                        </div>
-                        
-                        <div class="task-actions">
-                            ${isAssignee ? `
-                                <button class="task-action-button complete" onclick="completeTask(${task.id})">
-                                    ✅ Выполнено
-                                </button>
-                            ` : ''}
-                            ${isCreator ? `
-                                <button class="task-action-button delete" onclick="deleteTask(${task.id})">
-                                    🗑️ Удалить
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Отрисовка желаний
-        function renderWishes() {
-            const list = document.getElementById('wishes-list');
-            
-            if (wishes.length === 0) {
-                list.innerHTML = '<div class="empty-state">Пока нет желаний</div>';
-                return;
-            }
-            
-            list.innerHTML = wishes.map(wish => {
-                const isCreator = wish.user?.id === currentUser.id;
-                
-                return `
-                    <div class="wish-item">
-                        <div class="wish-title">${escapeHtml(wish.title)}</div>
-                        ${wish.description ? `<div class="wish-description">${escapeHtml(wish.description)}</div>` : ''}
-                        <div class="wish-footer">
-                            <span class="wish-meta">👤 ${wish.user?.first_name || '?'}</span>
-                            ${wish.link ? `<a href="${escapeHtml(wish.link)}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
-                        </div>
-                        
-                        <!-- Кнопки для желаний -->
-                        <div class="wish-actions">
-                            <button class="wish-action-button complete" onclick="completeWish(${wish.id})">
-                                ✅ Исполнено
-                            </button>
-                            ${isCreator ? `
-                                <button class="wish-action-button delete" onclick="deleteWish(${wish.id})">
-                                    🗑️ Удалить
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Защита от XSS
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Управление модальными окнами
-        window.showTaskForm = function() {
-            updateAssigneeSelect();
-            setTaskType('personal'); // По умолчанию личная задача
-            document.getElementById('task-modal').classList.remove('hidden');
-        };
-        
-        window.hideTaskForm = function() {
-            document.getElementById('task-modal').classList.add('hidden');
-        };
-        
-        window.showWishForm = function() {
-            document.getElementById('wish-modal').classList.remove('hidden');
-        };
-        
-        window.hideWishForm = function() {
-            document.getElementById('wish-modal').classList.add('hidden');
-        };
-
-        function showLoading() {
-            document.getElementById('loading').classList.remove('hidden');
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading').classList.add('hidden');
-        }
-    </script>
-</body>
-</html>
+        window.completeWish = async function(wishId
