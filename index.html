@@ -161,6 +161,16 @@
             color: white;
         }
         
+        .task-type-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e5e7eb;
+            color: #374151;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
         .wish-item {
             background: white;
             border-radius: 8px;
@@ -300,6 +310,61 @@
             font-size: 12px;
             color: #374151;
         }
+        
+        .task-type-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .task-type-option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .task-type-option.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .deadline-preset {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .deadline-preset button {
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .deadline-preset button:hover {
+            background: #f3f4f6;
+        }
+        
+        .deadline-preset button.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .time-input-note {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: -8px;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body>
@@ -356,15 +421,44 @@
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новая задача</h3>
+            
+            <!-- Тип задачи -->
+            <div class="task-type-selector">
+                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">
+                    📅 Личная
+                </div>
+                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">
+                    ⏳ С дедлайном
+                </div>
+            </div>
+            
             <input type="text" id="task-title" placeholder="Название задачи" required>
-            <textarea id="task-description" placeholder="Описание (необязательно)" rows="3"></textarea>
+            <textarea id="task-description" placeholder="Описание (необязательно)" rows="2"></textarea>
             
             <!-- Выбор исполнителя -->
             <select id="task-assignee" required>
                 <option value="">Кто выполняет?</option>
             </select>
             
-            <input type="datetime-local" id="task-deadline" required>
+            <!-- Блок для личной задачи (только дата) -->
+            <div id="personal-task-block">
+                <input type="date" id="task-date" placeholder="Выберите дату">
+                <div class="time-input-note">Время не учитывается</div>
+            </div>
+            
+            <!-- Блок для задачи с дедлайном (пресеты) -->
+            <div id="deadline-task-block" class="hidden">
+                <div class="deadline-preset">
+                    <button id="deadline-1h" onclick="setDeadlinePreset('1h')">1 час</button>
+                    <button id="deadline-3h" onclick="setDeadlinePreset('3h')">3 часа</button>
+                    <button id="deadline-day" onclick="setDeadlinePreset('day')">До конца дня</button>
+                    <button id="deadline-3days" onclick="setDeadlinePreset('3days')">3 дня</button>
+                    <button id="deadline-week" onclick="setDeadlinePreset('week')">Неделя</button>
+                </div>
+                <div class="time-input-note" id="deadline-display">Срок: не выбран</div>
+                <input type="hidden" id="task-deadline-value">
+            </div>
+            
             <div class="modal-buttons">
                 <button class="button primary" onclick="createTask()">Создать</button>
                 <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
@@ -397,6 +491,10 @@
         let tasks = [];
         let wishes = [];
         let familyMembers = [];
+        
+        // Состояние формы задачи
+        let currentTaskType = 'personal'; // 'personal' или 'deadline'
+        let selectedDeadlinePreset = null;
 
         // Инициализация
         window.onload = async function() {
@@ -471,7 +569,6 @@
                 if (response.ok) {
                     familyMembers = await response.json();
                 } else {
-                    // Если эндпоинт не работает, используем текущего пользователя
                     familyMembers = [currentUser];
                 }
             } catch (error) {
@@ -479,9 +576,7 @@
                 familyMembers = [currentUser];
             }
             
-            // Отображаем членов семьи
             renderFamilyMembers();
-            // Обновляем выпадающий список
             updateAssigneeSelect();
         }
 
@@ -515,7 +610,6 @@
                     select.appendChild(option);
                 });
             } else {
-                // Если список пуст, добавляем хотя бы себя
                 const option = document.createElement('option');
                 option.value = currentUser.id;
                 option.textContent = `${currentUser.first_name} (я)`;
@@ -545,6 +639,69 @@
                 console.error('Ошибка загрузки желаний:', error);
             }
         }
+
+        // Управление типом задачи
+        window.setTaskType = function(type) {
+            currentTaskType = type;
+            
+            // Обновляем выделение кнопок
+            document.getElementById('task-type-personal').classList.toggle('selected', type === 'personal');
+            document.getElementById('task-type-deadline').classList.toggle('selected', type === 'deadline');
+            
+            // Показываем нужный блок
+            document.getElementById('personal-task-block').classList.toggle('hidden', type !== 'personal');
+            document.getElementById('deadline-task-block').classList.toggle('hidden', type !== 'deadline');
+            
+            if (type === 'deadline') {
+                setDeadlinePreset('day'); // По умолчанию "До конца дня"
+            }
+        };
+
+        // Установка пресета дедлайна
+        window.setDeadlinePreset = function(preset) {
+            selectedDeadlinePreset = preset;
+            
+            // Убираем выделение со всех кнопок
+            document.querySelectorAll('.deadline-preset button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Подсвечиваем выбранную
+            document.getElementById(`deadline-${preset}`).classList.add('selected');
+            
+            // Рассчитываем дедлайн
+            const now = new Date();
+            let deadline = new Date(now);
+            
+            switch(preset) {
+                case '1h':
+                    deadline.setHours(now.getHours() + 1);
+                    deadline.setMinutes(0, 0, 0); // Обнуляем минуты
+                    break;
+                case '3h':
+                    deadline.setHours(now.getHours() + 3);
+                    deadline.setMinutes(0, 0, 0);
+                    break;
+                case 'day':
+                    deadline.setHours(23, 59, 0, 0); // Конец текущего дня
+                    break;
+                case '3days':
+                    deadline.setDate(now.getDate() + 3);
+                    deadline.setHours(23, 59, 0, 0);
+                    break;
+                case 'week':
+                    deadline.setDate(now.getDate() + 7);
+                    deadline.setHours(23, 59, 0, 0);
+                    break;
+            }
+            
+            // Сохраняем значение
+            document.getElementById('task-deadline-value').value = deadline.toISOString();
+            
+            // Показываем пользователю
+            const options = { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' };
+            document.getElementById('deadline-display').textContent = `Срок: ${deadline.toLocaleString('ru', options)}`;
+        };
 
         // Создание семьи
         window.createFamily = async function() {
@@ -613,11 +770,31 @@
             const title = document.getElementById('task-title').value;
             const description = document.getElementById('task-description').value;
             const assigneeId = document.getElementById('task-assignee').value;
-            const deadline = document.getElementById('task-deadline').value;
             
-            if (!title || !assigneeId || !deadline) {
-                alert('Заполните все поля');
+            if (!title || !assigneeId) {
+                alert('Заполните название и выберите исполнителя');
                 return;
+            }
+            
+            let deadline;
+            
+            if (currentTaskType === 'personal') {
+                // Личная задача: только дата, время = конец дня
+                const dateStr = document.getElementById('task-date').value;
+                if (!dateStr) {
+                    alert('Выберите дату');
+                    return;
+                }
+                
+                const [year, month, day] = dateStr.split('-').map(Number);
+                deadline = new Date(year, month - 1, day, 23, 59, 0).toISOString();
+            } else {
+                // Задача с дедлайном
+                if (!selectedDeadlinePreset) {
+                    alert('Выберите срок выполнения');
+                    return;
+                }
+                deadline = document.getElementById('task-deadline-value').value;
             }
             
             try {
@@ -630,16 +807,19 @@
                         assignee_id: parseInt(assigneeId),
                         creator_id: currentUser.id,
                         family_id: currentFamily.id,
-                        deadline: new Date(deadline).toISOString()
+                        deadline: deadline,
+                        task_type: currentTaskType
                     })
                 });
                 
                 hideTaskForm();
                 await loadTasks();
                 
+                // Очищаем форму
                 document.getElementById('task-title').value = '';
                 document.getElementById('task-description').value = '';
-                document.getElementById('task-deadline').value = '';
+                document.getElementById('task-date').value = '';
+                setTaskType('personal');
             } catch (error) {
                 alert('❌ Ошибка при создании задачи');
             }
@@ -725,14 +905,31 @@
                 const hoursLeft = (deadline - now) / (1000 * 60 * 60);
                 
                 let status;
-                if (hoursLeft < 0) {
-                    status = { color: '#ef4444', text: 'Просрочено' };
-                } else if (hoursLeft < 1) {
-                    status = { color: '#f97316', text: 'Меньше часа' };
-                } else if (hoursLeft < 3) {
-                    status = { color: '#eab308', text: 'Скоро' };
+                let typeBadge;
+                
+                // Определяем тип задачи по дедлайну (для старых задач)
+                const isPersonal = deadline.getHours() === 23 && deadline.getMinutes() === 59;
+                
+                if (isPersonal) {
+                    typeBadge = '<span class="task-type-badge">📅 Личная</span>';
+                    // Для личных задач статус на основе даты
+                    if (deadline < now) {
+                        status = { color: '#ef4444', text: 'Прошла' };
+                    } else {
+                        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+                        status = { color: '#3b82f6', text: `Осталось ${daysLeft} дн.` };
+                    }
                 } else {
-                    status = { color: '#22c55e', text: 'В процессе' };
+                    typeBadge = '<span class="task-type-badge">⏳ Дедлайн</span>';
+                    if (hoursLeft < 0) {
+                        status = { color: '#ef4444', text: 'Просрочено' };
+                    } else if (hoursLeft < 1) {
+                        status = { color: '#f97316', text: 'Меньше часа' };
+                    } else if (hoursLeft < 3) {
+                        status = { color: '#eab308', text: 'Скоро' };
+                    } else {
+                        status = { color: '#22c55e', text: 'В процессе' };
+                    }
                 }
                 
                 const isAssignee = task.assignee?.id === currentUser.id;
@@ -746,14 +943,13 @@
                         </div>
                         ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
                         <div class="task-meta">
-                            <span>👤 Исполнитель: ${task.assignee?.first_name || '?'} ${task.assignee?.id === currentUser.id ? '(я)' : ''}</span>
-                            <span>⏰ ${deadline.toLocaleString()}</span>
+                            <span>${typeBadge} 👤 ${task.assignee?.first_name || '?'} ${task.assignee?.id === currentUser.id ? '(я)' : ''}</span>
                         </div>
                         <div class="task-meta">
-                            <span>✍️ Создал: ${task.creator?.first_name || '?'}</span>
+                            <span>📅 ${deadline.toLocaleString()}</span>
+                            <span>✍️ ${task.creator?.first_name || '?'}</span>
                         </div>
                         
-                        <!-- Кнопки действий -->
                         <div class="task-actions">
                             ${isAssignee ? `
                                 <button class="task-action-button complete" onclick="completeTask(${task.id})">
@@ -803,6 +999,7 @@
         // Управление модальными окнами
         window.showTaskForm = function() {
             updateAssigneeSelect();
+            setTaskType('personal'); // По умолчанию личная задача
             document.getElementById('task-modal').classList.remove('hidden');
         };
         
