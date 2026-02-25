@@ -71,6 +71,7 @@
             width: auto;
             padding: 8px 16px;
             font-size: 14px;
+            margin-bottom: 0;
         }
         
         .tasks-section {
@@ -81,6 +82,17 @@
             font-size: 18px;
             color: #111827;
             margin-bottom: 16px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .section-header h2 {
+            margin: 0;
         }
         
         .task-item {
@@ -209,6 +221,7 @@
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             font-size: 14px;
+            font-family: inherit;
         }
         
         .modal-content textarea {
@@ -225,6 +238,14 @@
         .modal-buttons .button {
             flex: 1;
             margin-bottom: 0;
+        }
+        
+        .empty-state {
+            color: #9ca3af;
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -252,20 +273,21 @@
                 <p id="welcome-message"></p>
             </div>
 
-            <div style="display: flex; gap: 12px;">
-                <button class="button primary" style="flex: 1;" onclick="showTaskForm()">➕ Добавить задачу</button>
-                <button class="button secondary" style="flex: 1;" onclick="showWishForm()">🎁 Добавить желание</button>
-            </div>
-
             <!-- Список задач -->
             <div class="tasks-section">
-                <h2>📌 Задачи</h2>
+                <div class="section-header">
+                    <h2>📌 Задачи</h2>
+                    <button class="button small primary" onclick="showTaskForm()">➕ Добавить</button>
+                </div>
                 <div id="tasks-list"></div>
             </div>
 
             <!-- Список желаний -->
             <div class="tasks-section">
-                <h2>🎁 Желания</h2>
+                <div class="section-header">
+                    <h2>🎁 Желания</h2>
+                    <button class="button small secondary" onclick="showWishForm()">➕ Добавить</button>
+                </div>
                 <div id="wishes-list"></div>
             </div>
         </div>
@@ -278,7 +300,6 @@
                 <textarea id="task-description" placeholder="Описание (необязательно)" rows="3"></textarea>
                 <select id="task-assignee" required>
                     <option value="">Кто выполняет?</option>
-                    <option value="me">Я</option>
                 </select>
                 <input type="datetime-local" id="task-deadline" required>
                 <div class="modal-buttons">
@@ -334,24 +355,22 @@
                 } else {
                     // Для тестирования вне Telegram
                     console.log('Не в Telegram, используем тестовые данные');
-                    await authorizeUser({
-                        id: 123456789,
-                        first_name: 'Тест',
-                        last_name: 'Тестовый'
-                    });
+                    showNoFamilyScreen('Гость');
                 }
             } else {
                 // Для тестирования в браузере
                 console.log('Telegram WebApp не доступен');
-                await authorizeUser({
-                    id: 123456789,
-                    first_name: 'Тест',
-                    last_name: 'Тестовый'
-                });
+                showNoFamilyScreen('Гость');
             }
             
             hideLoading();
         };
+
+        // Показать экран без семьи для гостя
+        function showNoFamilyScreen(name) {
+            document.getElementById('greeting').textContent = `👋 Привет, ${name}!`;
+            document.getElementById('no-family').classList.remove('hidden');
+        }
 
         // Авторизация пользователя
         async function authorizeUser(tgUser) {
@@ -387,7 +406,7 @@
                 }
             } catch (error) {
                 console.error('Ошибка авторизации:', error);
-                alert('Ошибка подключения к серверу. Попробуйте позже.');
+                showNoFamilyScreen('Гость');
             }
         }
 
@@ -420,6 +439,7 @@
                 document.getElementById('welcome-message').textContent = `Привет, ${currentUser.first_name}!`;
                 
                 await loadTasks();
+                await loadWishes();
             } catch (error) {
                 console.error('Ошибка:', error);
                 alert('❌ Ошибка при создании семьи');
@@ -495,11 +515,9 @@
         // Загрузка членов семьи
         async function loadFamilyMembers() {
             try {
-                const response = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
-                if (response.ok) {
-                    familyMembers = await response.json();
-                    updateAssigneeSelect();
-                }
+                // Пока просто добавляем текущего пользователя
+                familyMembers = [currentUser];
+                updateAssigneeSelect();
             } catch (error) {
                 console.error('Ошибка загрузки членов семьи:', error);
             }
@@ -514,7 +532,7 @@
                 familyMembers.forEach(member => {
                     const option = document.createElement('option');
                     option.value = member.id;
-                    option.textContent = `${member.first_name} ${member.last_name || ''}`;
+                    option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
                     if (member.id === currentUser.id) {
                         option.selected = true;
                     }
@@ -615,7 +633,7 @@
             const list = document.getElementById('tasks-list');
             
             if (tasks.length === 0) {
-                list.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">Пока нет задач</p>';
+                list.innerHTML = '<div class="empty-state">Пока нет задач</div>';
                 return;
             }
             
@@ -638,10 +656,10 @@
                 return `
                     <div class="task-item" style="border-left-color: ${status.color}">
                         <div class="task-header">
-                            <span class="task-title">${task.title}</span>
+                            <span class="task-title">${escapeHtml(task.title)}</span>
                             <span class="task-status" style="background-color: ${status.color}">${status.text}</span>
                         </div>
-                        ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                        ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
                         <div class="task-meta">
                             <span>👤 ${task.assignee?.first_name || 'Не назначен'}</span>
                             <span>⏰ ${deadline.toLocaleString()}</span>
@@ -656,20 +674,28 @@
             const list = document.getElementById('wishes-list');
             
             if (wishes.length === 0) {
-                list.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">Пока нет желаний</p>';
+                list.innerHTML = '<div class="empty-state">Пока нет желаний</div>';
                 return;
             }
             
             list.innerHTML = wishes.map(wish => `
                 <div class="wish-item">
-                    <div class="wish-title">${wish.title}</div>
-                    ${wish.description ? `<div class="wish-description">${wish.description}</div>` : ''}
+                    <div class="wish-title">${escapeHtml(wish.title)}</div>
+                    ${wish.description ? `<div class="wish-description">${escapeHtml(wish.description)}</div>` : ''}
                     <div class="wish-footer">
                         <span class="wish-meta">👤 ${wish.user?.first_name || 'Неизвестно'}</span>
-                        ${wish.link ? `<a href="${wish.link}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
+                        ${wish.link ? `<a href="${escapeHtml(wish.link)}" target="_blank" class="wish-link">🔗 Ссылка</a>` : ''}
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Защита от XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Управление модальными окнами
