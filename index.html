@@ -168,7 +168,7 @@
         }
         
         .hidden {
-            display: none;
+            display: none !important;
         }
         
         .modal {
@@ -279,35 +279,35 @@
                 <div id="wishes-list"></div>
             </div>
         </div>
+    </div>
 
-        <!-- Модальное окно создания задачи -->
-        <div id="task-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Новая задача</h3>
-                <input type="text" id="task-title" placeholder="Название задачи" required>
-                <textarea id="task-description" placeholder="Описание (необязательно)" rows="3"></textarea>
-                <select id="task-assignee" required>
-                    <option value="">Кто выполняет?</option>
-                </select>
-                <input type="datetime-local" id="task-deadline" required>
-                <div class="modal-buttons">
-                    <button class="button primary" onclick="createTask()">Создать</button>
-                    <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
-                </div>
+    <!-- Модальное окно создания задачи (вынесено за пределы #app для чистоты) -->
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новая задача</h3>
+            <input type="text" id="task-title" placeholder="Название задачи" required>
+            <textarea id="task-description" placeholder="Описание (необязательно)" rows="3"></textarea>
+            <select id="task-assignee" required>
+                <option value="">Кто выполняет?</option>
+            </select>
+            <input type="datetime-local" id="task-deadline" required>
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createTask()">Создать</button>
+                <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
             </div>
         </div>
+    </div>
 
-        <!-- Модальное окно создания желания -->
-        <div id="wish-modal" class="modal hidden">
-            <div class="modal-content">
-                <h3>Новое желание</h3>
-                <input type="text" id="wish-title" placeholder="Что хотите?" required>
-                <textarea id="wish-description" placeholder="Описание (цвет, размер, модель)" rows="2"></textarea>
-                <input type="url" id="wish-link" placeholder="Ссылка на товар (необязательно)">
-                <div class="modal-buttons">
-                    <button class="button primary" onclick="createWish()">Добавить</button>
-                    <button class="button secondary" onclick="hideWishForm()">Отмена</button>
-                </div>
+    <!-- Модальное окно создания желания (вынесено за пределы #app для чистоты) -->
+    <div id="wish-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новое желание</h3>
+            <input type="text" id="wish-title" placeholder="Что хотите?" required>
+            <textarea id="wish-description" placeholder="Описание (цвет, размер, модель)" rows="2"></textarea>
+            <input type="url" id="wish-link" placeholder="Ссылка на товар (необязательно)">
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createWish()">Добавить</button>
+                <button class="button secondary" onclick="hideWishForm()">Отмена</button>
             </div>
         </div>
     </div>
