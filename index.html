@@ -55,6 +55,40 @@
             padding: 20px 16px 0;
         }
 
+        /* Полноэкранная загрузка */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 15, 23, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.3s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* ВСЯ ВЕРХНЯЯ ЧАСТЬ — фиксированная */
         .fixed-header {
             flex-shrink: 0;
@@ -139,7 +173,6 @@
             font-size: 20px;
         }
 
-        /* Кнопка добавления */
         .add-button {
             margin-bottom: 16px;
         }
@@ -438,13 +471,13 @@
     </style>
 </head>
 <body>
-    <div id="app" class="app">
-        <!-- Загрузка -->
-        <div id="loading" class="loading" style="display: none; text-align: center; padding: 40px;">
-            <p>Загрузка...</p>
-        </div>
+    <!-- Полноэкранная загрузка -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loader"></div>
+    </div>
 
-        <!-- Экран без семьи -->
+    <div id="app" class="app">
+        <!-- Экран без семьи (изначально скрыт) -->
         <div id="no-family" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
             <div class="fixed-header">
                 <div class="header-row">
@@ -464,7 +497,7 @@
             </div>
         </div>
 
-        <!-- Основное приложение -->
+        <!-- Основное приложение (изначально скрыто) -->
         <div id="main-app" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
             <!-- ВСЯ ФИКСИРОВАННАЯ ЧАСТЬ -->
             <div class="fixed-header">
@@ -540,7 +573,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания задачи (ПОЛНОЕ) -->
+    <!-- Модальное окно создания задачи -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новая задача</h3>
@@ -594,7 +627,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания желания (ПОЛНОЕ) -->
+    <!-- Модальное окно создания желания -->
     <div id="wish-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новое желание</h3>
@@ -624,7 +657,12 @@
 
         // Инициализация
         window.onload = async function() {
-            showLoading();
+            // Показываем загрузку
+            document.getElementById('loading-screen').classList.remove('hidden');
+            
+            // Скрываем оба экрана до завершения авторизации
+            document.getElementById('no-family').classList.add('hidden');
+            document.getElementById('main-app').classList.add('hidden');
             
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
@@ -641,7 +679,10 @@
                 showNoFamilyScreen('Гость');
             }
             
-            hideLoading();
+            // Прячем загрузку
+            document.getElementById('loading-screen').classList.add('hidden');
+            
+            // Настраиваем табы
             setupTabs();
         };
 
@@ -716,6 +757,7 @@
                     showNoFamilyScreen(currentUser.first_name);
                 }
             } catch (error) {
+                console.error('Ошибка авторизации:', error);
                 showNoFamilyScreen('Гость');
             }
         }
@@ -727,6 +769,7 @@
                 renderFamilyMembers();
                 updateAssigneeSelect();
             } catch (error) {
+                console.error('Ошибка загрузки членов семьи:', error);
                 familyMembers = [currentUser];
                 renderFamilyMembers();
             }
@@ -875,6 +918,7 @@
             `).join('');
         }
 
+        // Действия пользователя
         window.createFamily = async function() {
             const name = prompt('Введите название семьи:');
             if (!name) return;
@@ -1118,14 +1162,6 @@
         window.hideWishForm = function() {
             document.getElementById('wish-modal').classList.add('hidden');
         };
-
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
 
         function escapeHtml(text) {
             if (!text) return '';
