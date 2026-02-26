@@ -543,26 +543,106 @@
         </div>
     </div>
 
-    <!-- Модальные окна (сокращены для читаемости) -->
-    <div id="task-modal" class="modal hidden"><!-- содержимое такое же, как в прошлой версии --></div>
-    <div id="wish-modal" class="modal hidden"><!-- содержимое такое же, как в прошлой версии --></div>
+    <!-- Модальное окно создания задачи -->
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новая задача</h3>
+            <div class="task-type-selector">
+                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">📅 Личная</div>
+                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">⏳ С дедлайном</div>
+            </div>
+            <input type="text" id="task-title" placeholder="Название задачи" required>
+            <textarea id="task-description" placeholder="Описание (необязательно)" rows="2"></textarea>
+            <select id="task-assignee" required>
+                <option value="">Кто выполняет?</option>
+            </select>
+            <div id="personal-task-block">
+                <div class="datetime-row">
+                    <input type="date" id="task-date" required>
+                    <div class="time-selectors">
+                        <select id="task-hour" required>
+                            <option value="">Час</option>
+                            <option value="0">00</option><option value="1">01</option><option value="2">02</option>
+                            <option value="3">03</option><option value="4">04</option><option value="5">05</option>
+                            <option value="6">06</option><option value="7">07</option><option value="8">08</option>
+                            <option value="9">09</option><option value="10">10</option><option value="11">11</option>
+                            <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+                            <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+                            <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                            <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        </select>
+                        <select id="task-minute" required>
+                            <option value="">Мин</option>
+                            <option value="0">00</option><option value="10">10</option><option value="20">20</option>
+                            <option value="30">30</option><option value="40">40</option><option value="50">50</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="deadline-task-block" class="hidden">
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
+                    <button class="button small" onclick="setDeadlinePreset('1h')">1 час</button>
+                    <button class="button small" onclick="setDeadlinePreset('3h')">3 часа</button>
+                    <button class="button small" onclick="setDeadlinePreset('day')">До конца дня</button>
+                    <button class="button small" onclick="setDeadlinePreset('3days')">3 дня</button>
+                    <button class="button small" onclick="setDeadlinePreset('week')">Неделя</button>
+                </div>
+                <div class="time-input-note" id="deadline-display" style="color:#90a0b0;font-size:12px;">Срок: не выбран</div>
+                <input type="hidden" id="task-deadline-value">
+            </div>
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createTask()">Создать</button>
+                <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания желания -->
+    <div id="wish-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новое желание</h3>
+            <input type="text" id="wish-title" placeholder="Что хотите?" required>
+            <textarea id="wish-description" placeholder="Описание (цвет, размер, модель)" rows="2"></textarea>
+            <input type="url" id="wish-link" placeholder="Ссылка на товар (необязательно)">
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createWish()">Добавить</button>
+                <button class="button secondary" onclick="hideWishForm()">Отмена</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Полная версия скрипта (все функции сохранены)
+        // Конфигурация
         const API_URL = 'https://family-influence-backend.onrender.com';
-        let currentUser = null, currentFamily = null, tasks = [], wishes = [], familyMembers = [];
-        let currentTaskType = 'personal', selectedDeadlinePreset = null;
+        
+        // Состояние
+        let currentUser = null;
+        let currentFamily = null;
+        let tasks = [];
+        let wishes = [];
+        let familyMembers = [];
+        let currentTaskType = 'personal';
+        let selectedDeadlinePreset = null;
 
         window.onload = async function() {
             showLoading();
+            
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
-                tg.ready(); tg.expand();
+                tg.ready();
+                tg.expand();
+                
                 const tgUser = tg.initDataUnsafe?.user;
-                if (tgUser) await authorizeUser(tgUser);
-                else showNoFamilyScreen('Гость');
-            } else showNoFamilyScreen('Гость');
+                if (tgUser) {
+                    await authorizeUser(tgUser);
+                } else {
+                    showNoFamilyScreen('Гость');
+                }
+            } else {
+                showNoFamilyScreen('Гость');
+            }
+            
             hideLoading();
             setupTabs();
         };
@@ -580,11 +660,13 @@
 
         async function loadFamiliesCount() {
             try {
-                const r = await fetch(`${API_URL}/api/families/count`);
-                const d = await r.json();
-                document.getElementById('families-count-main').textContent = d.count;
-                document.getElementById('families-count-no-family').textContent = d.count;
-            } catch (e) { console.error(e); }
+                const response = await fetch(`${API_URL}/api/families/count`);
+                const data = await response.json();
+                document.getElementById('families-count-main').textContent = data.count;
+                document.getElementById('families-count-no-family').textContent = data.count;
+            } catch (error) {
+                console.error('Ошибка загрузки количества семей:', error);
+            }
         }
 
         function showNoFamilyScreen(name) {
@@ -596,233 +678,455 @@
 
         async function authorizeUser(tgUser) {
             try {
-                const r = await fetch(`${API_URL}/api/auth`, {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({telegram_id:tgUser.id, first_name:tgUser.first_name, last_name:tgUser.last_name||''})
+                const response = await fetch(`${API_URL}/api/auth`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: tgUser.id,
+                        first_name: tgUser.first_name,
+                        last_name: tgUser.last_name || ''
+                    })
                 });
-                currentUser = await r.json();
+                
+                currentUser = await response.json();
                 await loadFamiliesCount();
+                
                 if (currentUser.family_id) {
-                    currentFamily = {id:currentUser.family_id};
+                    currentFamily = { id: currentUser.family_id };
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('no-family').classList.add('hidden');
                     document.getElementById('user-name-tasks').textContent = currentUser.first_name;
-                    await Promise.all([loadTasks(), loadWishes(), loadFamilyMembers()]);
-                } else showNoFamilyScreen(currentUser.first_name);
-            } catch (e) { showNoFamilyScreen('Гость'); }
+                    
+                    await Promise.all([
+                        loadTasks(),
+                        loadWishes(),
+                        loadFamilyMembers()
+                    ]);
+                } else {
+                    showNoFamilyScreen(currentUser.first_name);
+                }
+            } catch (error) {
+                showNoFamilyScreen('Гость');
+            }
         }
 
         async function loadFamilyMembers() {
             try {
-                const r = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
-                familyMembers = r.ok ? await r.json() : [currentUser];
-                renderFamilyMembers(); updateAssigneeSelect();
-            } catch { familyMembers = [currentUser]; }
+                const response = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
+                familyMembers = response.ok ? await response.json() : [currentUser];
+                renderFamilyMembers();
+                updateAssigneeSelect();
+            } catch (error) {
+                familyMembers = [currentUser];
+            }
         }
 
         function renderFamilyMembers() {
-            const c = document.getElementById('members-container');
+            const container = document.getElementById('members-container');
             document.getElementById('members-count').textContent = familyMembers.length;
-            c.innerHTML = familyMembers.map(m => `
+            
+            container.innerHTML = familyMembers.map(member => `
                 <div class="member-card">
-                    <div class="member-avatar">${m.first_name[0]}</div>
+                    <div class="member-avatar">${member.first_name[0]}</div>
                     <div class="member-info">
-                        <div class="member-name">${m.first_name} ${m.last_name||''}</div>
-                        <div class="member-role">${m.id===currentUser.id?'⚡ Это вы':'👤 Участник'}</div>
+                        <div class="member-name">${member.first_name} ${member.last_name || ''}</div>
+                        <div class="member-role">${member.id === currentUser.id ? '⚡ Это вы' : '👤 Участник'}</div>
                     </div>
                 </div>
             `).join('');
         }
 
         function updateAssigneeSelect() {
-            const s = document.getElementById('task-assignee');
-            s.innerHTML = '<option value="">Кто выполняет?</option>';
-            familyMembers.forEach(m => {
-                const o = document.createElement('option');
-                o.value = m.id; o.textContent = `${m.first_name} ${m.last_name||''}`.trim();
-                if (m.id===currentUser.id) o.selected = true;
-                s.appendChild(o);
+            const select = document.getElementById('task-assignee');
+            select.innerHTML = '<option value="">Кто выполняет?</option>';
+            
+            familyMembers.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = `${member.first_name} ${member.last_name || ''}`.trim();
+                if (member.id === currentUser.id) option.selected = true;
+                select.appendChild(option);
             });
         }
 
         async function loadTasks() {
             try {
-                const r = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
-                tasks = await r.json(); renderTasks();
-            } catch (e) { console.error(e); }
+                const response = await fetch(`${API_URL}/api/tasks?family_id=${currentFamily.id}`);
+                tasks = await response.json();
+                renderTasks();
+            } catch (error) {
+                console.error('Ошибка загрузки задач:', error);
+            }
         }
 
         async function loadWishes() {
             try {
-                const r = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
-                wishes = await r.json(); renderWishes();
-            } catch (e) { console.error(e); }
+                const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
+                wishes = await response.json();
+                renderWishes();
+            } catch (error) {
+                console.error('Ошибка загрузки желаний:', error);
+            }
         }
 
         function renderTasks() {
-            const c = document.getElementById('tasks-container');
+            const container = document.getElementById('tasks-container');
             const now = new Date();
             const today = now.toDateString();
+            
             const todayTasks = tasks.filter(t => new Date(t.deadline).toDateString() === today);
             const otherTasks = tasks.filter(t => new Date(t.deadline).toDateString() !== today);
-            document.getElementById('active-count').textContent = tasks.filter(t => new Date(t.deadline) > now).length;
-            document.getElementById('overdue-count').textContent = tasks.filter(t => new Date(t.deadline) < now).length;
+            
+            const activeCount = tasks.filter(t => new Date(t.deadline) > now).length;
+            const overdueCount = tasks.filter(t => new Date(t.deadline) < now).length;
+            
+            document.getElementById('active-count').textContent = activeCount;
+            document.getElementById('overdue-count').textContent = overdueCount;
+            
             let html = '<div class="section-title">Сегодня</div>';
-            if (todayTasks.length===0) html += '<div class="task-card">Нет задач на сегодня</div>';
-            else todayTasks.forEach(t => html += renderTaskCard(t));
-            if (otherTasks.length>0) {
-                html += '<div class="section-title" style="margin-top:20px;">Остальные</div>';
-                otherTasks.forEach(t => html += renderTaskCard(t));
+            
+            if (todayTasks.length === 0) {
+                html += '<div class="task-card">Нет задач на сегодня</div>';
+            } else {
+                todayTasks.forEach(task => html += renderTaskCard(task));
             }
-            c.innerHTML = html;
+            
+            if (otherTasks.length > 0) {
+                html += '<div class="section-title" style="margin-top:20px;">Остальные</div>';
+                otherTasks.forEach(task => html += renderTaskCard(task));
+            }
+            
+            container.innerHTML = html;
         }
 
         function renderTaskCard(task) {
-            const now = new Date(), deadline = new Date(task.deadline);
-            const overdue = deadline < now;
+            const now = new Date();
+            const deadline = new Date(task.deadline);
+            const isOverdue = deadline < now;
             const isAssignee = task.assignee?.id === currentUser.id;
             const isCreator = task.creator?.id === currentUser.id;
+            
             return `
                 <div class="task-card">
                     <div class="task-header">
                         <span class="task-title">${escapeHtml(task.title)}</span>
-                        <span class="task-badge ${overdue?'overdue':''}">${overdue?'Просрочено':'В процессе'}</span>
+                        <span class="task-badge ${isOverdue ? 'overdue' : ''}">${isOverdue ? 'Просрочено' : 'В процессе'}</span>
                     </div>
-                    ${task.description?`<div class="task-desc">${escapeHtml(task.description)}</div>`:''}
+                    ${task.description ? `<div class="task-desc">${escapeHtml(task.description)}</div>` : ''}
                     <div class="task-meta">
                         <span>📅 ${deadline.toLocaleDateString()} · ${deadline.toLocaleTimeString().slice(0,5)}</span>
-                        <span>👤 ${task.assignee?.first_name||'?'}</span>
+                        <span>👤 ${task.assignee?.first_name || '?'}</span>
                     </div>
                     <div class="task-actions">
-                        ${isAssignee?`<button class="button small" onclick="completeTask(${task.id})">✅ Выполнено</button>`:''}
-                        ${isCreator?`<button class="button small" onclick="deleteTask(${task.id})">🗑️ Удалить</button>`:''}
+                        ${isAssignee ? `<button class="button small" onclick="completeTask(${task.id})">✅ Выполнено</button>` : ''}
+                        ${isCreator ? `<button class="button small" onclick="deleteTask(${task.id})">🗑️ Удалить</button>` : ''}
                     </div>
                 </div>
             `;
         }
 
         function renderWishes() {
-            const c = document.getElementById('wishes-container');
+            const container = document.getElementById('wishes-container');
             document.getElementById('wishes-count').textContent = wishes.length;
-            c.innerHTML = wishes.map(w => `
+            
+            container.innerHTML = wishes.map(wish => `
                 <div class="wish-item">
-                    <span class="wish-title">${escapeHtml(w.title)}</span>
-                    <span class="wish-author">${w.user?.first_name||'?'}</span>
+                    <span class="wish-title">${escapeHtml(wish.title)}</span>
+                    <span class="wish-author">${wish.user?.first_name || '?'}</span>
                 </div>
             `).join('');
         }
 
+        // Создание семьи
         window.createFamily = async function() {
-            const name = prompt('Название семьи:'); if(!name) return;
+            const name = prompt('Введите название семьи:');
+            if (!name) return;
+            
             try {
-                const r = await fetch(`${API_URL}/api/families`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, user_id:currentUser.id}) });
-                const d = await r.json(); currentFamily = {id:d.id};
-                alert(`✅ Код: ${d.invite_code}`);
+                const response = await fetch(`${API_URL}/api/families`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, user_id: currentUser.id })
+                });
+                
+                const data = await response.json();
+                currentFamily = { id: data.id };
+                
+                alert(`✅ Код для приглашения: ${data.invite_code}`);
+                
                 document.getElementById('no-family').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 document.getElementById('user-name-tasks').textContent = currentUser.first_name;
-                await loadTasks(); await loadFamilyMembers(); await loadFamiliesCount();
-            } catch { alert('❌ Ошибка'); }
+                
+                await loadTasks();
+                await loadFamilyMembers();
+                await loadFamiliesCount();
+            } catch (error) {
+                alert('❌ Ошибка при создании семьи');
+            }
         };
 
+        // Присоединение к семье
         window.joinFamily = async function() {
-            const code = prompt('Код приглашения:'); if(!code) return;
+            const code = prompt('Введите код приглашения:');
+            if (!code) return;
+            
             try {
-                const r = await fetch(`${API_URL}/api/families/join`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({invite_code:code, user_id:currentUser.id}) });
-                if (r.ok) {
-                    const d = await r.json(); currentFamily = {id:d.id};
-                    alert('✅ Присоединились!');
+                const response = await fetch(`${API_URL}/api/families/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentFamily = { id: data.id };
+                    alert('✅ Вы присоединились к семье!');
+                    
                     document.getElementById('no-family').classList.add('hidden');
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('user-name-tasks').textContent = currentUser.first_name;
-                    await Promise.all([loadTasks(), loadWishes(), loadFamilyMembers()]);
-                } else alert('❌ Неверный код');
-            } catch { alert('❌ Ошибка'); }
+                    
+                    await Promise.all([
+                        loadTasks(),
+                        loadWishes(),
+                        loadFamilyMembers()
+                    ]);
+                } else {
+                    alert('❌ Неверный код');
+                }
+            } catch (error) {
+                alert('❌ Ошибка при присоединении');
+            }
         };
 
-        window.setTaskType = function(t) {
-            currentTaskType = t;
-            document.getElementById('task-type-personal').classList.toggle('selected',t==='personal');
-            document.getElementById('task-type-deadline').classList.toggle('selected',t==='deadline');
-            document.getElementById('personal-task-block').classList.toggle('hidden',t!=='personal');
-            document.getElementById('deadline-task-block').classList.toggle('hidden',t!=='deadline');
-            if(t==='deadline') setDeadlinePreset('day');
+        // Управление типом задачи
+        window.setTaskType = function(type) {
+            currentTaskType = type;
+            
+            document.getElementById('task-type-personal').classList.toggle('selected', type === 'personal');
+            document.getElementById('task-type-deadline').classList.toggle('selected', type === 'deadline');
+            document.getElementById('personal-task-block').classList.toggle('hidden', type !== 'personal');
+            document.getElementById('deadline-task-block').classList.toggle('hidden', type !== 'deadline');
+            
+            if (type === 'deadline') {
+                setDeadlinePreset('day');
+            }
         };
 
-        window.setDeadlinePreset = function(p) {
-            selectedDeadlinePreset = p;
-            const now = new Date(); let d = new Date(now);
-            if(p==='1h'){ d.setHours(now.getHours()+1); d.setMinutes(0,0,0); }
-            if(p==='3h'){ d.setHours(now.getHours()+3); d.setMinutes(0,0,0); }
-            if(p==='day'){ d.setHours(23,59,0,0); }
-            if(p==='3days'){ d.setDate(now.getDate()+3); d.setHours(23,59,0,0); }
-            if(p==='week'){ d.setDate(now.getDate()+7); d.setHours(23,59,0,0); }
-            document.getElementById('task-deadline-value').value = d.toISOString();
-            document.getElementById('deadline-display').textContent = `Срок: ${d.toLocaleString()}`;
+        // Установка пресета дедлайна
+        window.setDeadlinePreset = function(preset) {
+            selectedDeadlinePreset = preset;
+            
+            const now = new Date();
+            let deadline = new Date(now);
+            
+            switch(preset) {
+                case '1h':
+                    deadline.setHours(now.getHours() + 1);
+                    deadline.setMinutes(0, 0, 0);
+                    break;
+                case '3h':
+                    deadline.setHours(now.getHours() + 3);
+                    deadline.setMinutes(0, 0, 0);
+                    break;
+                case 'day':
+                    deadline.setHours(23, 59, 0, 0);
+                    break;
+                case '3days':
+                    deadline.setDate(now.getDate() + 3);
+                    deadline.setHours(23, 59, 0, 0);
+                    break;
+                case 'week':
+                    deadline.setDate(now.getDate() + 7);
+                    deadline.setHours(23, 59, 0, 0);
+                    break;
+            }
+            
+            document.getElementById('task-deadline-value').value = deadline.toISOString();
+            document.getElementById('deadline-display').textContent = `Срок: ${deadline.toLocaleString()}`;
         };
 
+        // Создание задачи
         window.createTask = async function() {
             const title = document.getElementById('task-title').value;
-            const desc = document.getElementById('task-description').value;
-            const aid = document.getElementById('task-assignee').value;
-            if(!title||!aid) return alert('Заполните название и выберите исполнителя');
+            const description = document.getElementById('task-description').value;
+            const assigneeId = document.getElementById('task-assignee').value;
+            
+            if (!title || !assigneeId) {
+                alert('Заполните название и выберите исполнителя');
+                return;
+            }
+            
             let deadline;
-            if(currentTaskType==='personal') {
-                const ds = document.getElementById('task-date').value;
-                const hs = document.getElementById('task-hour').value;
-                const ms = document.getElementById('task-minute').value;
-                if(!ds||!hs||!ms) return alert('Выберите дату и время');
-                const [y,m,d] = ds.split('-').map(Number);
-                deadline = new Date(y,m-1,d,parseInt(hs),parseInt(ms),0).toISOString();
+            
+            if (currentTaskType === 'personal') {
+                const dateStr = document.getElementById('task-date').value;
+                const hourStr = document.getElementById('task-hour').value;
+                const minuteStr = document.getElementById('task-minute').value;
+                
+                if (!dateStr || !hourStr || !minuteStr) {
+                    alert('Выберите дату и время');
+                    return;
+                }
+                
+                const [year, month, day] = dateStr.split('-').map(Number);
+                const hours = parseInt(hourStr);
+                const minutes = parseInt(minuteStr);
+                
+                deadline = new Date(year, month - 1, day, hours, minutes, 0).toISOString();
             } else {
-                if(!selectedDeadlinePreset) return alert('Выберите срок');
+                if (!selectedDeadlinePreset) {
+                    alert('Выберите срок');
+                    return;
+                }
                 deadline = document.getElementById('task-deadline-value').value;
             }
+            
             try {
-                await fetch(`${API_URL}/api/tasks`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title, description:desc, assignee_id:parseInt(aid), creator_id:currentUser.id, family_id:currentFamily.id, deadline }) });
-                hideTaskForm(); await loadTasks();
-                document.getElementById('task-title').value=''; document.getElementById('task-description').value='';
-                document.getElementById('task-date').value=''; document.getElementById('task-hour').value=''; document.getElementById('task-minute').value='';
+                await fetch(`${API_URL}/api/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        assignee_id: parseInt(assigneeId),
+                        creator_id: currentUser.id,
+                        family_id: currentFamily.id,
+                        deadline
+                    })
+                });
+                
+                hideTaskForm();
+                await loadTasks();
+                
+                // Очистка формы
+                document.getElementById('task-title').value = '';
+                document.getElementById('task-description').value = '';
+                document.getElementById('task-date').value = '';
+                document.getElementById('task-hour').value = '';
+                document.getElementById('task-minute').value = '';
                 setTaskType('personal');
-            } catch { alert('❌ Ошибка'); }
+            } catch (error) {
+                alert('❌ Ошибка при создании задачи');
+            }
         };
 
-        window.completeTask = async function(id) {
-            if(!confirm('Отметить задачу как выполненную?')) return;
-            try { await fetch(`${API_URL}/api/tasks/${id}`,{method:'DELETE'}); await loadTasks(); } catch { alert('❌ Ошибка'); }
+        // Завершение задачи
+        window.completeTask = async function(taskId) {
+            if (!confirm('Отметить задачу как выполненную?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                await loadTasks();
+            } catch (error) {
+                alert('❌ Ошибка при завершении задачи');
+            }
         };
 
-        window.deleteTask = async function(id) {
-            if(!confirm('Удалить задачу?')) return;
-            try { await fetch(`${API_URL}/api/tasks/${id}`,{method:'DELETE'}); await loadTasks(); } catch { alert('❌ Ошибка'); }
+        // Удаление задачи
+        window.deleteTask = async function(taskId) {
+            if (!confirm('Удалить задачу?')) return;
+            
+            try {
+                await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                await loadTasks();
+            } catch (error) {
+                alert('❌ Ошибка при удалении задачи');
+            }
         };
 
+        // Создание желания
         window.createWish = async function() {
             const title = document.getElementById('wish-title').value;
-            const desc = document.getElementById('wish-description').value;
+            const description = document.getElementById('wish-description').value;
             const link = document.getElementById('wish-link').value;
-            if(!title) return alert('Введите название');
+            
+            if (!title) {
+                alert('Введите название');
+                return;
+            }
+            
             try {
-                await fetch(`${API_URL}/api/wishes`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ title, description:desc, link, user_id:currentUser.id, family_id:currentFamily.id }) });
-                hideWishForm(); await loadWishes();
-                document.getElementById('wish-title').value=''; document.getElementById('wish-description').value=''; document.getElementById('wish-link').value='';
-            } catch { alert('❌ Ошибка'); }
+                await fetch(`${API_URL}/api/wishes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        description,
+                        link,
+                        user_id: currentUser.id,
+                        family_id: currentFamily.id
+                    })
+                });
+                
+                hideWishForm();
+                await loadWishes();
+                
+                document.getElementById('wish-title').value = '';
+                document.getElementById('wish-description').value = '';
+                document.getElementById('wish-link').value = '';
+            } catch (error) {
+                alert('❌ Ошибка при создании желания');
+            }
         };
 
+        // Показать код приглашения
         window.showInviteCode = async function() {
-            try { const r = await fetch(`${API_URL}/api/families/${currentFamily.id}`); const d = await r.json(); alert(`🔑 Код приглашения: ${d.invite_code}`); } catch { alert('Код пока недоступен'); }
+            try {
+                const response = await fetch(`${API_URL}/api/families/${currentFamily.id}`);
+                const data = await response.json();
+                alert(`🔑 Код приглашения: ${data.invite_code}`);
+            } catch {
+                alert('Код пока недоступен');
+            }
         };
 
-        window.leaveFamily = function() { if(confirm('Точно выйти из семьи?')) { /* логика */ } };
+        // Выход из семьи
+        window.leaveFamily = function() {
+            if (confirm('Точно выйти из семьи?')) {
+                // Здесь будет логика выхода
+            }
+        };
 
-        window.showTaskForm = function() { updateAssigneeSelect(); document.getElementById('task-modal').classList.remove('hidden'); };
-        window.hideTaskForm = function() { document.getElementById('task-modal').classList.add('hidden'); };
-        window.showWishForm = function() { document.getElementById('wish-modal').classList.remove('hidden'); };
-        window.hideWishForm = function() { document.getElementById('wish-modal').classList.add('hidden'); };
+        // Управление модальными окнами
+        window.showTaskForm = function() {
+            updateAssigneeSelect();
+            document.getElementById('task-modal').classList.remove('hidden');
+        };
+        
+        window.hideTaskForm = function() {
+            document.getElementById('task-modal').classList.add('hidden');
+        };
+        
+        window.showWishForm = function() {
+            document.getElementById('wish-modal').classList.remove('hidden');
+        };
+        
+        window.hideWishForm = function() {
+            document.getElementById('wish-modal').classList.add('hidden');
+        };
 
-        function showLoading() { document.getElementById('loading').style.display = 'block'; }
-        function hideLoading() { document.getElementById('loading').style.display = 'none'; }
-        function escapeHtml(t) { if(!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
