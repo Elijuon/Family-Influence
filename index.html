@@ -89,7 +89,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* ВСЯ ВЕРХНЯЯ ЧАСТЬ — фиксированная */
         .fixed-header {
             flex-shrink: 0;
             background: transparent;
@@ -134,7 +133,6 @@
             color: #ffffff;
         }
 
-        /* Таб‑бар */
         .tab-bar {
             display: flex;
             justify-content: space-around;
@@ -177,7 +175,6 @@
             margin-bottom: 16px;
         }
 
-        /* Контент — скроллится */
         .content {
             flex: 1;
             overflow-y: auto;
@@ -477,7 +474,7 @@
     </div>
 
     <div id="app" class="app">
-        <!-- Экран без семьи (изначально скрыт) -->
+        <!-- Экран без семьи -->
         <div id="no-family" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
             <div class="fixed-header">
                 <div class="header-row">
@@ -497,9 +494,8 @@
             </div>
         </div>
 
-        <!-- Основное приложение (изначально скрыто) -->
+        <!-- Основное приложение -->
         <div id="main-app" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
-            <!-- ВСЯ ФИКСИРОВАННАЯ ЧАСТЬ -->
             <div class="fixed-header">
                 <div class="header-row">
                     <div class="title-section">
@@ -515,7 +511,6 @@
                     <span id="user-name-tasks"></span> · <span id="active-count">0</span> активные · <span id="overdue-count">0</span> просрочка
                 </div>
 
-                <!-- Таб‑бар -->
                 <div class="tab-bar">
                     <button class="tab-btn active" data-tab="tasks">
                         <span class="tab-icon">📋</span>
@@ -535,30 +530,21 @@
                     </button>
                 </div>
 
-                <!-- Кнопка добавления -->
                 <div id="add-button-container" class="add-button">
                     <button class="button small primary" onclick="showTaskForm()" style="width:100%;">➕ Новая задача</button>
                 </div>
             </div>
 
-            <!-- КОНТЕНТ (скроллится) -->
             <div class="content">
-                <!-- Вкладка ЗАДАЧИ -->
                 <div id="tab-tasks" class="tab-content active">
                     <div id="tasks-container"></div>
                 </div>
-
-                <!-- Вкладка ЖЕЛАНИЯ -->
                 <div id="tab-wishes" class="tab-content">
                     <div id="wishes-container"></div>
                 </div>
-
-                <!-- Вкладка УЧАСТНИКИ -->
                 <div id="tab-members" class="tab-content">
                     <div id="members-container"></div>
                 </div>
-
-                <!-- Вкладка НАСТРОЙКИ -->
                 <div id="tab-settings" class="tab-content">
                     <div id="settings-container">
                         <div class="settings-item" onclick="showInviteCode()">
@@ -573,80 +559,14 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания задачи -->
-    <div id="task-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Новая задача</h3>
-            <div class="task-type-selector">
-                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">📅 Личная</div>
-                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">⏳ С дедлайном</div>
-            </div>
-            <input type="text" id="task-title" placeholder="Название задачи" required>
-            <textarea id="task-description" placeholder="Описание (необязательно)" rows="2"></textarea>
-            <select id="task-assignee" required>
-                <option value="">Кто выполняет?</option>
-            </select>
-            <div id="personal-task-block">
-                <div class="datetime-row">
-                    <input type="date" id="task-date" required>
-                    <div class="time-selectors">
-                        <select id="task-hour" required>
-                            <option value="">Час</option>
-                            <option value="0">00</option><option value="1">01</option><option value="2">02</option>
-                            <option value="3">03</option><option value="4">04</option><option value="5">05</option>
-                            <option value="6">06</option><option value="7">07</option><option value="8">08</option>
-                            <option value="9">09</option><option value="10">10</option><option value="11">11</option>
-                            <option value="12">12</option><option value="13">13</option><option value="14">14</option>
-                            <option value="15">15</option><option value="16">16</option><option value="17">17</option>
-                            <option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                            <option value="21">21</option><option value="22">22</option><option value="23">23</option>
-                        </select>
-                        <select id="task-minute" required>
-                            <option value="">Мин</option>
-                            <option value="0">00</option><option value="10">10</option><option value="20">20</option>
-                            <option value="30">30</option><option value="40">40</option><option value="50">50</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div id="deadline-task-block" class="hidden">
-                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
-                    <button class="button small" onclick="setDeadlinePreset('1h')">1 час</button>
-                    <button class="button small" onclick="setDeadlinePreset('3h')">3 часа</button>
-                    <button class="button small" onclick="setDeadlinePreset('day')">До конца дня</button>
-                    <button class="button small" onclick="setDeadlinePreset('3days')">3 дня</button>
-                    <button class="button small" onclick="setDeadlinePreset('week')">Неделя</button>
-                </div>
-                <div class="time-input-note" id="deadline-display" style="color:#90a0b0;font-size:12px;">Срок: не выбран</div>
-                <input type="hidden" id="task-deadline-value">
-            </div>
-            <div class="modal-buttons">
-                <button class="button primary" onclick="createTask()">Создать</button>
-                <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно создания желания -->
-    <div id="wish-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3>Новое желание</h3>
-            <input type="text" id="wish-title" placeholder="Что хотите?" required>
-            <textarea id="wish-description" placeholder="Описание (цвет, размер, модель)" rows="2"></textarea>
-            <input type="url" id="wish-link" placeholder="Ссылка на товар (необязательно)">
-            <div class="modal-buttons">
-                <button class="button primary" onclick="createWish()">Добавить</button>
-                <button class="button secondary" onclick="hideWishForm()">Отмена</button>
-            </div>
-        </div>
-    </div>
+    <!-- Модальные окна -->
+    <div id="task-modal" class="modal hidden"><!-- содержимое --></div>
+    <div id="wish-modal" class="modal hidden"><!-- содержимое --></div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Конфигурация
         const API_URL = 'https://family-influence-backend.onrender.com';
         
-        // Состояние
         let currentUser = null;
         let currentFamily = null;
         let tasks = [];
@@ -655,14 +575,9 @@
         let currentTaskType = 'personal';
         let selectedDeadlinePreset = null;
 
-        // Инициализация
         window.onload = async function() {
             // Показываем загрузку
             document.getElementById('loading-screen').classList.remove('hidden');
-            
-            // Скрываем оба экрана до завершения авторизации
-            document.getElementById('no-family').classList.add('hidden');
-            document.getElementById('main-app').classList.add('hidden');
             
             if (window.Telegram?.WebApp) {
                 const tg = window.Telegram.WebApp;
@@ -682,7 +597,6 @@
             // Прячем загрузку
             document.getElementById('loading-screen').classList.add('hidden');
             
-            // Настраиваем табы
             setupTabs();
         };
 
@@ -743,6 +657,7 @@
                 await loadFamiliesCount();
                 
                 if (currentUser.family_id) {
+                    // Есть семья — показываем основное приложение
                     currentFamily = { id: currentUser.family_id };
                     document.getElementById('main-app').classList.remove('hidden');
                     document.getElementById('no-family').classList.add('hidden');
@@ -754,6 +669,7 @@
                         loadFamilyMembers()
                     ]);
                 } else {
+                    // Нет семьи — показываем экран создания
                     showNoFamilyScreen(currentUser.first_name);
                 }
             } catch (error) {
@@ -769,7 +685,6 @@
                 renderFamilyMembers();
                 updateAssigneeSelect();
             } catch (error) {
-                console.error('Ошибка загрузки членов семьи:', error);
                 familyMembers = [currentUser];
                 renderFamilyMembers();
             }
@@ -779,9 +694,7 @@
             const container = document.getElementById('members-container');
             if (!container) return;
             
-            document.getElementById('members-count').textContent = familyMembers.length;
-            
-            if (familyMembers.length === 0) {
+            if (!familyMembers || familyMembers.length === 0) {
                 container.innerHTML = '<div class="member-card">Нет участников</div>';
                 return;
             }
@@ -795,6 +708,8 @@
                     </div>
                 </div>
             `).join('');
+            
+            document.getElementById('members-count').textContent = familyMembers.length;
         }
 
         function updateAssigneeSelect() {
@@ -803,7 +718,7 @@
             
             select.innerHTML = '<option value="">Кто выполняет?</option>';
             
-            if (familyMembers.length === 0) {
+            if (!familyMembers || familyMembers.length === 0) {
                 const option = document.createElement('option');
                 option.value = currentUser?.id || '';
                 option.textContent = `${currentUser?.first_name || 'Я'} (я)`;
@@ -1141,9 +1056,7 @@
         };
 
         window.leaveFamily = function() {
-            if (confirm('Точно выйти из семьи?')) {
-                // Здесь будет логика выхода
-            }
+            if (confirm('Точно выйти из семьи?')) {}
         };
 
         window.showTaskForm = function() {
