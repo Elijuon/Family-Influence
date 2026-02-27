@@ -703,7 +703,6 @@
             }
         }
 
-        // Загрузка членов семьи
         async function loadFamilyMembers() {
             if (!currentFamily) return;
             
@@ -750,7 +749,6 @@
             `).join('');
         }
 
-        // Обновление выпадающего списка исполнителей
         function updateAssigneeSelect() {
             const select = document.getElementById('task-assignee');
             if (!select) return;
@@ -782,21 +780,26 @@
             }
         }
 
-        // Загрузка желаний
+        // ------------------------------------------------------------
+        // ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ — ИСПРАВЛЕННАЯ ФУНКЦИЯ loadWishes
+        // ------------------------------------------------------------
         async function loadWishes() {
             if (!currentFamily) return;
             
             try {
+                console.log('Загружаем желания для семьи:', currentFamily.id);
                 const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Загруженные желания:', data);
                     wishes = data || [];
                 } else {
+                    console.log('Ошибка загрузки желаний, статус:', response.status);
                     wishes = [];
                 }
             } catch (error) {
-                console.error('Ошибка загрузки желаний:', error);
+                console.error('Ошибка при загрузке желаний:', error);
                 wishes = [];
             }
             
