@@ -435,6 +435,7 @@
 </head>
 <body>
     <div id="app" class="app">
+        <!-- Загрузка -->
         <div id="loading" class="loading" style="display: none; text-align: center; padding: 40px;">
             <p>Загрузка...</p>
         </div>
@@ -707,31 +708,16 @@
             if (!currentFamily) return;
             
             try {
-                console.log('Загружаем членов семьи для family_id:', currentFamily.id);
                 const response = await fetch(`${API_URL}/api/users?family_id=${currentFamily.id}`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Загружены члены семьи:', data);
-                    
                     if (data && data.length > 0) {
-                        // Убираем дубликаты
-                        const uniqueMembers = [];
-                        const seen = new Set();
-                        
-                        data.forEach(member => {
-                            if (!seen.has(member.id)) {
-                                seen.add(member.id);
-                                uniqueMembers.push(member);
-                            }
-                        });
-                        
-                        familyMembers = uniqueMembers;
+                        familyMembers = data;
                     } else {
                         familyMembers = [currentUser];
                     }
                 } else {
-                    console.log('Не удалось загрузить членов семьи');
                     familyMembers = [currentUser];
                 }
             } catch (error) {
@@ -739,9 +725,7 @@
                 familyMembers = [currentUser];
             }
             
-            // Обновляем отображение
             renderFamilyMembers();
-            console.log('Итоговый список familyMembers:', familyMembers);
         }
 
         function renderFamilyMembers() {
@@ -778,17 +762,12 @@
                     const option = document.createElement('option');
                     option.value = member.id;
                     option.textContent = `${member.first_name || ''} ${member.last_name || ''}`.trim();
-                    if (member.id === currentUser?.id) {
-                        option.selected = true;
-                    }
                     select.appendChild(option);
                 });
-                console.log('Список исполнителей обновлён:', familyMembers);
             } else {
                 const option = document.createElement('option');
                 option.value = currentUser?.id || '';
                 option.textContent = `${currentUser?.first_name || 'Я'} (я)`;
-                option.selected = true;
                 select.appendChild(option);
             }
         }
@@ -803,20 +782,17 @@
             }
         }
 
-        // Загрузка желаний (исправлено)
+        // Загрузка желаний
         async function loadWishes() {
             if (!currentFamily) return;
             
             try {
-                console.log('Загружаем желания для family_id:', currentFamily.id);
                 const response = await fetch(`${API_URL}/api/wishes?family_id=${currentFamily.id}`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Загружены желания:', data);
                     wishes = data || [];
                 } else {
-                    console.log('Не удалось загрузить желания');
                     wishes = [];
                 }
             } catch (error) {
@@ -889,16 +865,12 @@
                 return;
             }
             
-            container.innerHTML = wishes.map(wish => {
-                const userName = wish.user?.first_name || 
-                               (wish.user_id === currentUser?.id ? currentUser.first_name : '?');
-                return `
-                    <div class="wish-item">
-                        <span class="wish-title">${escapeHtml(wish.title)}</span>
-                        <span class="wish-author">${userName}</span>
-                    </div>
-                `;
-            }).join('');
+            container.innerHTML = wishes.map(wish => `
+                <div class="wish-item">
+                    <span class="wish-title">${escapeHtml(wish.title)}</span>
+                    <span class="wish-author">${wish.user?.first_name || '?'}</span>
+                </div>
+            `).join('');
         }
 
         window.createFamily = async function() {
