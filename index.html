@@ -39,9 +39,36 @@ flex-direction:column;
 padding-bottom:env(safe-area-inset-bottom);
 }
 
+/* TABBAR */
+
+.tabbar-wrap{
+padding:12px 16px 0;
+padding-top:calc(12px + env(safe-area-inset-top));
+}
+
+.tabbar{
+display:flex;
+justify-content:space-between;
+background:rgba(20,28,40,.4);
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,.15);
+border-radius:26px;
+padding:10px 18px;
+}
+
+.tab-item{
+opacity:.6;
+cursor:pointer;
+}
+
+.tab-item.active{
+opacity:1;
+}
+
+/* HEADER */
+
 .header{
 padding:16px;
-padding-top:calc(16px + env(safe-area-inset-top));
 }
 
 .header-glass{
@@ -221,6 +248,15 @@ cursor:pointer;
 
 <div class="app">
 
+<div class="tabbar-wrap">
+<div class="tabbar">
+<div class="tab-item active">📋</div>
+<div class="tab-item">🎁</div>
+<div class="tab-item">👥</div>
+<div class="tab-item">⚙️</div>
+</div>
+</div>
+
 <div class="header">
 
 <div class="header-glass">
@@ -290,7 +326,6 @@ cursor:pointer;
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
@@ -299,42 +334,12 @@ const API_URL = "https://family-influence-backend.onrender.com";
 
 let currentUser = null;
 let tasks = [];
-let taskType = "personal";
 
-// DOM
 const avatarEl = document.getElementById("avatar");
 const userNameEl = document.getElementById("user-name");
 const userStatsEl = document.getElementById("user-stats");
 const familyCountEl = document.getElementById("family-count");
 const tasksContainerEl = document.getElementById("tasks-container");
-const modalEl = document.getElementById("modal");
-
-// Modal logic
-document.getElementById("newTaskBtn").onclick = () => modalEl.classList.add("active");
-modalEl.onclick = e => { if(e.target.id==="modal") modalEl.classList.remove("active"); };
-
-document.getElementById("typePersonal").onclick = () => {
-taskType="personal";
-typePersonal.classList.add("active");
-typeDeadline.classList.remove("active");
-personalBlock.style.display="block";
-deadlineBlock.style.display="none";
-};
-
-document.getElementById("typeDeadline").onclick = () => {
-taskType="deadline";
-typeDeadline.classList.add("active");
-typePersonal.classList.remove("active");
-personalBlock.style.display="none";
-deadlineBlock.style.display="block";
-};
-
-function initTime(){
-for(let i=0;i<24;i++)
-hour.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
-for(let i=0;i<60;i+=10)
-minute.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
-}
 
 async function api(path, options={}){
 const res = await fetch(API_URL+path,{
@@ -358,6 +363,7 @@ last_name:user.last_name||""
 });
 
 userNameEl.innerText = user.first_name;
+
 avatarEl.innerHTML = user.photo_url
 ? `<img src="${user.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
 : user.first_name[0];
@@ -396,9 +402,7 @@ tasksContainerEl.appendChild(div);
 userStatsEl.innerText=`${active} активных · ${overdue} просроченных`;
 }
 
-initTime();
 init();
-
 </script>
 
 </body>
