@@ -251,20 +251,22 @@ const API_URL = "https://family-influence-backend.onrender.com";
 let currentUser = null;
 let tasks = [];
 
-function pluralize(count, one, few, many){
-const mod10 = count % 10;
-const mod100 = count % 100;
-if(mod10===1 && mod100!==11) return one;
-if(mod10>=2 && mod10<=4 && (mod100<10 || mod100>=20)) return few;
-return many;
-}
-
 async function api(path, options={}){
 const res = await fetch(API_URL+path,{
 headers:{ "Content-Type":"application/json" },
 ...options
 });
 return res.json();
+}
+
+function statWord(count){
+if(count===1) return "активная";
+return "активных";
+}
+
+function overdueWord(count){
+if(count===1) return "просроченная";
+return "просроченных";
 }
 
 async function loadAvatar(id){
@@ -297,7 +299,7 @@ const active = tasks.filter(t=>new Date(t.deadline)>now).length;
 const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
 
 document.getElementById("user-stats").innerText =
-`${active} ${pluralize(active,"активная","активные","активных")} · ${overdue} ${pluralize(overdue,"просроченная","просроченные","просроченных")}`;
+`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
 
 if(tasks.length===0){
 container.innerHTML='<div class="card">Нет задач</div>';
