@@ -60,11 +60,6 @@ align-items:center;
 margin-bottom:14px;
 }
 
-.title-row h1{
-font-size:22px;
-font-weight:600;
-}
-
 .family-count{
 display:flex;
 align-items:center;
@@ -189,10 +184,7 @@ color:white;
 margin-bottom:12px;
 }
 
-.row{
-display:flex;
-gap:10px;
-}
+.row{display:flex;gap:10px;}
 
 .toggle{
 display:flex;
@@ -248,7 +240,7 @@ cursor:pointer;
 
 </div>
 
-<div class="new-task" onclick="openModal()">+ Новая задача</div>
+<div class="new-task" id="newTaskBtn">+ Новая задача</div>
 
 </div>
 
@@ -260,15 +252,14 @@ cursor:pointer;
 </div>
 
 <!-- MODAL -->
-
 <div class="modal-overlay" id="modal">
 <div class="modal">
 
 <h2>Новая задача</h2>
 
 <div class="toggle">
-<div id="typePersonal" class="active" onclick="setType('personal')">Личная</div>
-<div id="typeDeadline" onclick="setType('deadline')">С дедлайном</div>
+<div id="typePersonal" class="active">Личная</div>
+<div id="typeDeadline">С дедлайном</div>
 </div>
 
 <input id="title" class="input" placeholder="Название задачи">
@@ -292,7 +283,7 @@ cursor:pointer;
 </select>
 </div>
 
-<button class="submit-btn" onclick="createTask()">Создать</button>
+<button class="submit-btn" id="createBtn">Создать</button>
 
 </div>
 </div>
@@ -310,33 +301,39 @@ let currentUser = null;
 let tasks = [];
 let taskType = "personal";
 
-function openModal(){
-document.getElementById("modal").classList.add("active");
-}
+// DOM
+const avatarEl = document.getElementById("avatar");
+const userNameEl = document.getElementById("user-name");
+const userStatsEl = document.getElementById("user-stats");
+const familyCountEl = document.getElementById("family-count");
+const tasksContainerEl = document.getElementById("tasks-container");
+const modalEl = document.getElementById("modal");
 
-function closeModal(){
-document.getElementById("modal").classList.remove("active");
-}
+// Modal logic
+document.getElementById("newTaskBtn").onclick = () => modalEl.classList.add("active");
+modalEl.onclick = e => { if(e.target.id==="modal") modalEl.classList.remove("active"); };
 
-document.getElementById("modal").addEventListener("click",e=>{
-if(e.target.id==="modal") closeModal();
-});
+document.getElementById("typePersonal").onclick = () => {
+taskType="personal";
+typePersonal.classList.add("active");
+typeDeadline.classList.remove("active");
+personalBlock.style.display="block";
+deadlineBlock.style.display="none";
+};
 
-function setType(type){
-taskType=type;
-typePersonal.classList.toggle("active",type==="personal");
-typeDeadline.classList.toggle("active",type==="deadline");
-personalBlock.style.display=type==="personal"?"block":"none";
-deadlineBlock.style.display=type==="deadline"?"block":"none";
-}
+document.getElementById("typeDeadline").onclick = () => {
+taskType="deadline";
+typeDeadline.classList.add("active");
+typePersonal.classList.remove("active");
+personalBlock.style.display="none";
+deadlineBlock.style.display="block";
+};
 
 function initTime(){
-for(let i=0;i<24;i++){
+for(let i=0;i<24;i++)
 hour.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
-}
-for(let i=0;i<60;i+=10){
+for(let i=0;i<60;i+=10)
 minute.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
-}
 }
 
 async function api(path, options={}){
@@ -347,94 +344,11 @@ headers:{ "Content-Type":"application/json" },
 return res.json();
 }
 
-function statWord(count){ return count===1?"активная":"активных"; }
-function overdueWord(count){ return count===1?"просроченная":"просроченных"; }
-
-async function loadAvatar(id){
-const data = await api("/api/avatar/"+id);
-if(data.url){
-avatar.innerHTML=`<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-}else{
-avatar.innerText=currentUser.first_name[0];
-}
-}
-
-async function loadFamiliesCount(){
-const data=await api("/api/families/count");
-familyCount.innerText=data.count||0;
-}
-
-async function loadTasks(){
-if(!currentUser.family_id) return;
-tasks=await api("/api/tasks?family_id="+currentUser.family_id);
-renderTasks();
-}
-
-function renderTasks(){
-tasksContainer.innerHTML="";
-const now=new Date();
-const active=tasks.filter(t=>new Date(t.deadline)>now).length;
-const overdue=tasks.filter(t=>new Date(t.deadline)<now).length;
-
-userStats.innerText=`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
-
-tasks.forEach(t=>{
-const div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<div class="task-header">
-<div>${t.title}</div>
-<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
-</div>
-<div>${new Date(t.deadline).toLocaleString()}</div>
-`;
-tasksContainer.appendChild(div);
-});
-}
-
-async function createTask(){
-const title=document.getElementById("title").value.trim();
-if(!title) return alert("Введите название");
-
-let deadline;
-const now=new Date();
-
-if(taskType==="personal"){
-deadline=new Date(
-now.getFullYear(),
-now.getMonth(),
-now.getDate(),
-parseInt(hour.value),
-parseInt(minute.value)
-);
-}else{
-const opt=deadlineOption.value;
-if(opt==="1h") deadline=new Date(now.getTime()+3600000);
-if(opt==="3h") deadline=new Date(now.getTime()+3*3600000);
-if(opt==="12h") deadline=new Date(now.getTime()+12*3600000);
-if(opt==="24h") deadline=new Date(now.getTime()+24*3600000);
-if(opt==="3d") deadline=new Date(now.getTime()+3*86400000);
-if(opt==="7d") deadline=new Date(now.getTime()+7*86400000);
-}
-
-await api("/api/tasks",{
-method:"POST",
-body:JSON.stringify({
-title,
-deadline,
-family_id:currentUser.family_id
-})
-});
-
-closeModal();
-loadTasks();
-}
-
 async function init(){
-const user=tg.initDataUnsafe?.user;
+const user = tg.initDataUnsafe?.user;
 if(!user) return;
 
-currentUser=await api("/api/auth",{
+currentUser = await api("/api/auth",{
 method:"POST",
 body:JSON.stringify({
 telegram_id:user.id,
@@ -443,10 +357,43 @@ last_name:user.last_name||""
 })
 });
 
-userName.innerText=user.first_name;
-await loadAvatar(user.id);
-await loadFamiliesCount();
-await loadTasks();
+userNameEl.innerText = user.first_name;
+avatarEl.innerHTML = user.photo_url
+? `<img src="${user.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+: user.first_name[0];
+
+const fam = await api("/api/families/count");
+familyCountEl.innerText = fam.count || 0;
+
+if(currentUser.family_id){
+tasks = await api("/api/tasks?family_id="+currentUser.family_id);
+renderTasks();
+}
+}
+
+function renderTasks(){
+tasksContainerEl.innerHTML="";
+const now = new Date();
+
+let active=0, overdue=0;
+
+tasks.forEach(t=>{
+const isOver = new Date(t.deadline)<now;
+if(isOver) overdue++; else active++;
+
+const div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<div class="task-header">
+<div>${t.title}</div>
+<div class="badge">${isOver?"Просрочено":"Активна"}</div>
+</div>
+<div>${new Date(t.deadline).toLocaleString()}</div>
+`;
+tasksContainerEl.appendChild(div);
+});
+
+userStatsEl.innerText=`${active} активных · ${overdue} просроченных`;
 }
 
 initTime();
