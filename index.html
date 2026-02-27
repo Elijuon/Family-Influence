@@ -6,70 +6,185 @@
 <title>Family</title>
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
 body{
-margin:0;
 font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;
 background:linear-gradient(145deg,#0b0f17,#131a24);
-color:#fff;
+color:white;
+height:100vh;
+overflow:hidden;
+position:relative;
+}
+
+body::before{
+content:"";
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:url("planet.png") center/cover no-repeat;
+opacity:.25;
+filter:blur(2px) brightness(1.2);
+z-index:0;
 }
 
 .app{
+position:relative;
+z-index:2;
 max-width:420px;
 margin:0 auto;
-padding:20px;
+height:100vh;
+display:flex;
+flex-direction:column;
+padding:20px 16px 0;
+}
+
+.header{
+flex-shrink:0;
 }
 
 h1{
 font-size:26px;
-margin-bottom:4px;
+margin-bottom:6px;
 }
 
-.subtitle{
-color:#aab8c5;
+.status{
 font-size:14px;
-margin-bottom:15px;
+color:#aab8c5;
+margin-bottom:12px;
+}
+
+.status span{
+color:white;
+font-weight:500;
 }
 
 .tabs{
 display:flex;
-gap:10px;
-margin-bottom:15px;
+background:rgba(20,28,40,.5);
+backdrop-filter:blur(10px);
+border-radius:30px;
+padding:6px;
+margin-bottom:14px;
 }
 
 .tab{
 flex:1;
-padding:8px;
-border-radius:20px;
 text-align:center;
-background:rgba(255,255,255,0.05);
-cursor:pointer;
+padding:6px 0;
+border-radius:20px;
 font-size:13px;
+color:#90a0b0;
+cursor:pointer;
 }
 
 .tab.active{
 background:#3b82f6;
+color:white;
+}
+
+.content{
+flex:1;
+overflow-y:auto;
+padding-bottom:80px;
+}
+
+.section{
+font-size:13px;
+color:#8fa0b5;
+text-transform:uppercase;
+margin-bottom:10px;
+margin-top:12px;
 }
 
 .card{
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(8px);
-padding:15px;
+background:rgba(20,28,40,.5);
+backdrop-filter:blur(10px);
+border:1px solid rgba(255,255,255,.05);
 border-radius:18px;
-margin-bottom:12px;
+padding:14px;
+margin-bottom:10px;
+}
+
+.task-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:6px;
 }
 
 .task-title{
 font-weight:600;
-margin-bottom:4px;
+font-size:15px;
+}
+
+.badge{
+font-size:12px;
+padding:3px 8px;
+border-radius:20px;
+}
+
+.badge.active{
+background:rgba(100,180,250,.3);
+color:#a0d0ff;
+}
+
+.badge.overdue{
+background:rgba(220,80,80,.25);
+color:#ff9f9f;
 }
 
 .task-meta{
-font-size:13px;
-color:#9fb0c3;
+font-size:12px;
+color:#90a0b0;
 }
 
-button{
-padding:8px 14px;
+.fab{
+position:fixed;
+bottom:24px;
+right:24px;
+width:54px;
+height:54px;
+border-radius:50%;
+background:#3b82f6;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:28px;
+cursor:pointer;
+box-shadow:0 0 20px rgba(59,130,246,.6);
+}
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.7);
+display:none;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+
+.modal-content{
+background:#131a24;
+padding:20px;
+border-radius:18px;
+width:100%;
+max-width:400px;
+}
+
+.modal input{
+width:100%;
+padding:10px;
+border-radius:12px;
+border:none;
+margin-bottom:10px;
+background:rgba(255,255,255,.07);
+color:white;
+}
+
+.modal button{
+padding:8px 12px;
 border:none;
 border-radius:12px;
 background:#3b82f6;
@@ -77,63 +192,51 @@ color:white;
 cursor:pointer;
 }
 
-.small{
-font-size:12px;
-padding:6px 10px;
-}
-
-input{
-width:100%;
-padding:10px;
-border:none;
-border-radius:12px;
-margin-bottom:10px;
-background:rgba(255,255,255,0.07);
-color:white;
-}
-
-.section{
-margin-top:20px;
-margin-bottom:8px;
-font-size:13px;
-color:#8fa0b5;
-text-transform:uppercase;
-}
 </style>
 </head>
-
 <body>
+
 <div class="app">
 
+<div class="header">
 <h1>Семейные дела</h1>
-<div class="subtitle" id="user-info"></div>
+<div class="status">
+<span id="user-name"></span> · 
+<span id="active-count">0</span> активные · 
+<span id="overdue-count">0</span> просрочка
+</div>
 
 <div class="tabs">
 <div class="tab active" onclick="switchTab('tasks')">Задачи</div>
 <div class="tab" onclick="switchTab('wishes')">Желания</div>
 </div>
+</div>
+
+<div class="content">
 
 <div id="tasks-tab">
-<div class="card">
+<div class="section">Сегодня</div>
+<div id="today-tasks"></div>
+
+<div class="section">Остальные</div>
+<div id="other-tasks"></div>
+</div>
+
+<div id="wishes-tab" style="display:none;">
+<div id="wishes-container"></div>
+</div>
+
+</div>
+</div>
+
+<div class="fab" onclick="openModal()">+</div>
+
+<div class="modal" id="task-modal">
+<div class="modal-content">
 <input id="task-title" placeholder="Название задачи">
 <input type="datetime-local" id="task-deadline">
 <button onclick="createTask()">Создать</button>
 </div>
-
-<div class="section">Сегодня</div>
-<div id="tasks-container"></div>
-</div>
-
-<div id="wishes-tab" style="display:none;">
-<div class="card">
-<input id="wish-title" placeholder="Новое желание">
-<button onclick="createWish()">Добавить</button>
-</div>
-
-<div class="section">Список желаний</div>
-<div id="wishes-container"></div>
-</div>
-
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -141,7 +244,6 @@ text-transform:uppercase;
 
 const API_URL="https://family-influence-backend.onrender.com";
 const tg=window.Telegram.WebApp;
-
 tg.ready();
 tg.expand();
 
@@ -160,14 +262,11 @@ return res.json();
 
 let currentUser=null;
 let tasks=[];
-let wishes=[];
 
 async function authorize(){
 currentUser=await api("/api/auth",{method:"POST"});
-document.getElementById("user-info").innerText=
-currentUser.first_name+" · активные задачи";
+document.getElementById("user-name").innerText=currentUser.first_name;
 loadTasks();
-loadWishes();
 }
 
 async function loadTasks(){
@@ -176,21 +275,46 @@ renderTasks();
 }
 
 function renderTasks(){
-const container=document.getElementById("tasks-container");
+const now=new Date();
+const todayStr=now.toDateString();
+
+const today=tasks.filter(t=>new Date(t.deadline).toDateString()===todayStr);
+const other=tasks.filter(t=>new Date(t.deadline).toDateString()!==todayStr);
+
+const active=tasks.filter(t=>new Date(t.deadline)>now).length;
+const overdue=tasks.filter(t=>new Date(t.deadline)<now).length;
+
+document.getElementById("active-count").innerText=active;
+document.getElementById("overdue-count").innerText=overdue;
+
+renderList("today-tasks",today);
+renderList("other-tasks",other);
+}
+
+function renderList(id,list){
+const container=document.getElementById(id);
 container.innerHTML="";
-if(!tasks.length){
+if(!list.length){
 container.innerHTML="<div class='card'>Нет задач</div>";
 return;
 }
-tasks.forEach(t=>{
+
+list.forEach(t=>{
+const deadline=new Date(t.deadline);
+const isOverdue=deadline<new Date();
+
 const div=document.createElement("div");
 div.className="card";
 div.innerHTML=`
+<div class="task-header">
 <div class="task-title">${t.title}</div>
-<div class="task-meta">
-До: ${new Date(t.deadline).toLocaleString()}
+<div class="badge ${isOverdue?"overdue":"active"}">
+${isOverdue?"Просрочено":"В процессе"}
 </div>
-<button class="small" onclick="deleteTask(${t.id})">Удалить</button>
+</div>
+<div class="task-meta">
+${deadline.toLocaleDateString()} · ${deadline.toLocaleTimeString().slice(0,5)}
+</div>
 `;
 container.appendChild(div);
 });
@@ -211,47 +335,18 @@ deadline:new Date(deadline).toISOString()
 })
 });
 
+closeModal();
+loadTasks();
+}
+
+function openModal(){
+document.getElementById("task-modal").style.display="flex";
+}
+
+function closeModal(){
+document.getElementById("task-modal").style.display="none";
 document.getElementById("task-title").value="";
-loadTasks();
-}
-
-async function deleteTask(id){
-await api("/api/tasks/"+id,{method:"DELETE"});
-loadTasks();
-}
-
-async function loadWishes(){
-wishes=await api("/api/wishes");
-renderWishes();
-}
-
-function renderWishes(){
-const container=document.getElementById("wishes-container");
-container.innerHTML="";
-if(!wishes.length){
-container.innerHTML="<div class='card'>Нет желаний</div>";
-return;
-}
-wishes.forEach(w=>{
-const div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<div>${w.title}</div>
-`;
-container.appendChild(div);
-});
-}
-
-async function createWish(){
-const title=document.getElementById("wish-title").value;
-if(!title)return;
-
-await api("/api/wishes",{
-method:"POST",
-body:JSON.stringify({title})
-});
-document.getElementById("wish-title").value="";
-loadWishes();
+document.getElementById("task-deadline").value="";
 }
 
 function switchTab(tab){
