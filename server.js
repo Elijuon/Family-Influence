@@ -22,10 +22,6 @@ const supabase = createClient(
   SUPABASE_SERVICE_ROLE_KEY
 );
 
-app.get("/health", (req, res) => {
-  res.send("OK");
-});
-
 /* ================= AUTH ================= */
 
 app.post("/api/auth", async (req, res) => {
@@ -39,7 +35,7 @@ app.post("/api/auth", async (req, res) => {
 
   if (existing) return res.json(existing);
 
-  const { data: user, error } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .insert({ telegram_id, first_name, last_name })
     .select()
@@ -47,7 +43,7 @@ app.post("/api/auth", async (req, res) => {
 
   if (error) return res.status(500).json({ error });
 
-  res.json(user);
+  res.json(data);
 });
 
 /* ================= FAMILIES ================= */
