@@ -435,12 +435,10 @@
 </head>
 <body>
     <div id="app" class="app">
-        <!-- Загрузка -->
         <div id="loading" class="loading" style="display: none; text-align: center; padding: 40px;">
             <p>Загрузка...</p>
         </div>
 
-        <!-- Экран без семьи -->
         <div id="no-family" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
             <div class="fixed-header">
                 <div class="header-row">
@@ -460,7 +458,6 @@
             </div>
         </div>
 
-        <!-- Основное приложение -->
         <div id="main-app" class="hidden" style="height: 100%; display: flex; flex-direction: column;">
             <div class="fixed-header">
                 <div class="header-row">
@@ -525,7 +522,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания задачи -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новая задача</h3>
@@ -579,7 +575,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно создания желания -->
     <div id="wish-modal" class="modal hidden">
         <div class="modal-content">
             <h3>Новое желание</h3>
@@ -595,10 +590,8 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Конфигурация
         const API_URL = 'https://family-influence-backend.onrender.com';
         
-        // Состояние
         let currentUser = null;
         let currentFamily = null;
         let tasks = [];
@@ -607,7 +600,6 @@
         let currentTaskType = 'personal';
         let selectedDeadlinePreset = null;
 
-        // Инициализация
         window.onload = async function() {
             showLoading();
             if (window.Telegram?.WebApp) {
@@ -688,7 +680,6 @@
                     document.getElementById('no-family').classList.add('hidden');
                     document.getElementById('user-name-tasks').textContent = currentUser.first_name;
                     
-                    // Загружаем все данные
                     await Promise.all([
                         loadTasks(),
                         loadWishes(),
@@ -781,10 +772,13 @@
         }
 
         // ------------------------------------------------------------
-        // ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ — ИСПРАВЛЕННАЯ ФУНКЦИЯ loadWishes
+        // ЕДИНСТВЕННАЯ ИЗМЕНЁННАЯ ФУНКЦИЯ — ИСПРАВЛЕННАЯ ЗАГРУЗКА ЖЕЛАНИЙ
         // ------------------------------------------------------------
         async function loadWishes() {
-            if (!currentFamily) return;
+            if (!currentFamily) {
+                console.log('Нет семьи, желания не загружаем');
+                return;
+            }
             
             try {
                 console.log('Загружаем желания для семьи:', currentFamily.id);
