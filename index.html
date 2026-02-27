@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Семейные задачи</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-top: 0; }
+        button {
+            padding: 10px 16px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .primary { background: #2563eb; color: white; }
+        .secondary { background: #374151; color: white; }
+        .card {
+            background: #1f2937;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        input {
+            padding: 8px;
+            width: 100%;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Семейные задачи</h1>
+
+<div id="auth-status">Авторизация...</div>
+
+<div id="main" style="display:none;">
+
+    <h3>Создать задачу</h3>
+    <input id="task-title" placeholder="Название задачи">
+    <input id="task-deadline" type="datetime-local">
+    <button class="primary" onclick="createTask()">Создать</button>
+
+    <h3>Список задач</h3>
+    <div id="tasks"></div>
+
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+
+const API_URL = "https://ТВОЙ_BACKEND_URL"; // заменить
+
+let currentUser = null;
+let tasks = [];
+
+const tg = window.Telegram?.WebApp;
+const initData = tg?.initData;
+
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
+
+async function api(path, options = {}) {
+    const res = await fetch(API_URL + path, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            "x-telegram-init-data": initData
+        }
+    });
+
+    if (!res.ok) {
+        throw new Error("API error");
+    }
+
+    return res.json();
+}
+
+async function authorize() {
+    try {
+        currentUser = await api("/api/auth", { method: "POST" });
+        document.getElementById("auth-status").innerText =
+            "Вы вошли как: " + currentUser.first_name;
+        document.getElementById("main").style.display = "block";
+        loadTasks();
+    } catch (e) {
+        document.getElementById("auth-status").innerText =
+            "Ошибка авторизации";
+    }
+}
+
+async function loadTasks() {
+    tasks = await api("/api/tasks");
+    renderTasks();
+}
+
+function renderTasks() {
+    const container = document.getElementById("tasks");
+    container.innerHTML = "";
+
+    if (!tasks.length) {
+        container.innerHTML = "<div class='card'>Нет задач</div>";
+        return;
+    }
+
+    tasks.forEach(task => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <strong>${task.title}</strong><br>
+            До: ${new Date(task.deadline).toLocaleString()}<br>
+            <button class="secondary" onclick="deleteTask(${task.id})">Удалить</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function createTask() {
+    const title = document.getElementById("task-title").value;
+    const deadline = document.getElementById("task-deadline").value;
+
+    if (!title || !deadline) return;
+
+    await api("/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({
+            title,
+            description: "",
+            assignee_id: currentUser.id,
+            deadline: new Date(deadline).toISOString()
+        })
+    });
+
+    document.getElementById("task-title").value = "";
+    loadTasks();
+}
+
+async function deleteTask(id) {
+    await api("/api/tasks/" + id, {
+        method: "DELETE"
+    });
+
+    loadTasks();
+}
+
+authorize();
+
+</script>
+
+</body>
+</html>
