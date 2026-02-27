@@ -1,0 +1,18 @@
+{
+  "name": "family-tasks-backend",
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.3.0",
+    "helmet": "^7.1.0",
+    "node-telegram-bot-api": "^0.64.0"
+  }
+}
