@@ -7,17 +7,13 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-
-html,body{
-height:100%;
-background:#0b0f17;
-}
+html,body{height:100%;background:#0b0f17;}
 
 body{
 font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;
 color:white;
-position:relative;
 min-height:100dvh;
+position:relative;
 overflow:hidden;
 }
 
@@ -52,14 +48,10 @@ flex-direction:column;
 padding-bottom:env(safe-area-inset-bottom);
 }
 
-/* HEADER */
-
 .header{
 padding:16px;
 padding-top:calc(16px + env(safe-area-inset-top));
 }
-
-/* TAB BAR */
 
 .tabs{
 display:flex;
@@ -77,7 +69,6 @@ flex:1;
 display:flex;
 justify-content:center;
 cursor:pointer;
-transition:.25s;
 }
 
 .tab svg{
@@ -92,11 +83,9 @@ transition:.25s;
 
 .tab.active svg{
 opacity:1;
-filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
 stroke:#3b82f6;
+filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
 }
-
-/* TITLE */
 
 .title-row{
 display:flex;
@@ -111,14 +100,9 @@ font-weight:600;
 }
 
 .family-count{
-display:flex;
-align-items:center;
-gap:6px;
 font-size:14px;
 color:#d0d8e5;
 }
-
-/* USER */
 
 .user-block{
 display:flex;
@@ -137,6 +121,7 @@ align-items:center;
 justify-content:center;
 font-weight:600;
 font-size:20px;
+overflow:hidden;
 }
 
 .user-info{
@@ -148,8 +133,6 @@ color:#e0e6f0;
 color:white;
 font-weight:500;
 }
-
-/* CONTENT */
 
 .content{
 flex:1;
@@ -201,8 +184,6 @@ font-size:13px;
 color:#d0d8e5;
 }
 
-/* FAB */
-
 .fab{
 position:fixed;
 bottom:calc(26px + env(safe-area-inset-bottom));
@@ -218,10 +199,7 @@ font-size:30px;
 cursor:pointer;
 box-shadow:0 0 35px rgba(59,130,246,.9);
 z-index:10;
-transition:.2s;
 }
-
-.fab:active{transform:scale(.92);}
 </style>
 </head>
 <body>
@@ -231,7 +209,6 @@ transition:.2s;
 <div class="header">
 
 <div class="tabs">
-
 <div class="tab active">
 <svg viewBox="0 0 24 24">
 <rect x="4" y="4" width="16" height="16" rx="3"/>
@@ -264,51 +241,128 @@ transition:.2s;
 <path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/>
 </svg>
 </div>
-
 </div>
 
 <div class="title-row">
 <h1>Семейные дела</h1>
-<div class="family-count">👥 0</div>
+<div class="family-count">👥 <span id="family-count">0</span></div>
 </div>
 
 <div class="user-block">
-<div class="avatar">Д</div>
+<div class="avatar" id="avatar"></div>
 <div class="user-info">
-<span>Дмитрий</span><br>
-0 активные · 2 просрочка
+<span id="user-name"></span><br>
+<span id="user-stats"></span>
 </div>
 </div>
 
 </div>
 
 <div class="content">
-
 <div class="section">Сегодня</div>
-
-<div class="card">
-<div class="task-header">
-<div class="task-title">Заявка</div>
-<div class="badge">Просрочено</div>
-</div>
-<div class="task-meta">27.02.2026 · 10:00</div>
-</div>
-
-<div class="section">Остальные</div>
-<div class="card">Нет задач</div>
-
+<div id="tasks-container"></div>
 </div>
 
 </div>
 
 <div class="fab">+</div>
 
-<!-- Telegram expand -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
+
+const API_URL = "https://family-influence-backend.onrender.com";
+
+let currentUser = null;
+let tasks = [];
+
+function pluralize(count, one, few, many){
+const mod10 = count % 10;
+const mod100 = count % 100;
+if(mod10===1 && mod100!==11) return one;
+if(mod10>=2 && mod10<=4 && (mod100<10 || mod100>=20)) return few;
+return many;
+}
+
+async function api(path, options={}){
+const res = await fetch(API_URL+path,{
+headers:{ "Content-Type":"application/json" },
+...options
+});
+return res.json();
+}
+
+async function loadAvatar(id){
+const data = await api("/api/avatar/"+id);
+if(data.url){
+document.getElementById("avatar").innerHTML =
+`<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+}else{
+document.getElementById("avatar").innerText = currentUser.first_name[0];
+}
+}
+
+async function loadFamiliesCount(){
+const data = await api("/api/families/count");
+document.getElementById("family-count").innerText = data.count;
+}
+
+async function loadTasks(){
+if(!currentUser.family_id) return;
+tasks = await api("/api/tasks?family_id="+currentUser.family_id);
+renderTasks();
+}
+
+function renderTasks(){
+const container = document.getElementById("tasks-container");
+container.innerHTML="";
+
+const now = new Date();
+const active = tasks.filter(t=>new Date(t.deadline)>now).length;
+const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
+
+document.getElementById("user-stats").innerText =
+`${active} ${pluralize(active,"активная","активные","активных")} · ${overdue} ${pluralize(overdue,"просроченная","просроченные","просроченных")}`;
+
+tasks.forEach(t=>{
+const div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<div class="task-header">
+<div class="task-title">${t.title}</div>
+<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
+</div>
+<div class="task-meta">
+${new Date(t.deadline).toLocaleDateString()} · ${new Date(t.deadline).toLocaleTimeString().slice(0,5)}
+</div>
+`;
+container.appendChild(div);
+});
+}
+
+async function init(){
+const user = tg.initDataUnsafe?.user;
+if(!user) return;
+
+currentUser = await api("/api/auth",{
+method:"POST",
+body:JSON.stringify({
+telegram_id:user.id,
+first_name:user.first_name,
+last_name:user.last_name||""
+})
+});
+
+document.getElementById("user-name").innerText = user.first_name;
+
+await loadAvatar(user.id);
+await loadFamiliesCount();
+await loadTasks();
+}
+
+init();
 </script>
 
 </body>
