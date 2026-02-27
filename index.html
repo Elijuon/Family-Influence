@@ -28,14 +28,6 @@ transform:scale(1.05);
 z-index:0;
 }
 
-body::after{
-content:"";
-position:fixed;
-inset:0;
-background:radial-gradient(circle at 50% 10%, rgba(255,255,255,.05), transparent 60%);
-z-index:1;
-}
-
 .app{
 position:relative;
 z-index:2;
@@ -52,15 +44,18 @@ padding:16px;
 padding-top:calc(16px + env(safe-area-inset-top));
 }
 
+/* TABBAR */
+
 .tabs{
 display:flex;
 justify-content:space-around;
 align-items:center;
-margin-bottom:22px;
+margin-bottom:18px;
 background:rgba(255,255,255,.05);
 backdrop-filter:blur(30px);
 border-radius:40px;
 padding:16px 0;
+border:1px solid rgba(255,255,255,.15);
 }
 
 .tab{
@@ -86,11 +81,22 @@ stroke:#3b82f6;
 filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
 }
 
+/* GLASS HEADER BLOCK */
+
+.header-glass{
+background:rgba(20,28,40,.35);
+backdrop-filter:blur(18px);
+border:1px solid rgba(255,255,255,.15);
+border-radius:24px;
+padding:18px;
+margin-bottom:18px;
+}
+
 .title-row{
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:12px;
+margin-bottom:14px;
 }
 
 .title-row h1{
@@ -99,20 +105,26 @@ font-weight:600;
 }
 
 .family-count{
+display:flex;
+align-items:center;
+gap:6px;
 font-size:14px;
 color:#d0d8e5;
+background:rgba(255,255,255,.05);
+padding:6px 10px;
+border-radius:20px;
+border:1px solid rgba(255,255,255,.15);
 }
 
 .user-block{
 display:flex;
 align-items:center;
-gap:12px;
-margin-bottom:10px;
+gap:14px;
 }
 
 .avatar{
-width:50px;
-height:50px;
+width:54px;
+height:54px;
 border-radius:50%;
 background:rgba(59,130,246,.7);
 display:flex;
@@ -125,13 +137,15 @@ overflow:hidden;
 
 .user-info{
 font-size:14px;
-color:rgba(255,255,255,.75);
+color:rgba(255,255,255,.8);
 }
 
 .user-info span{
 color:white;
 font-weight:500;
 }
+
+/* CONTENT */
 
 .content{
 flex:1;
@@ -145,7 +159,6 @@ font-size:13px;
 color:#c8d0df;
 text-transform:uppercase;
 margin-bottom:10px;
-margin-top:14px;
 letter-spacing:.5px;
 }
 
@@ -183,6 +196,8 @@ font-size:13px;
 color:#d0d8e5;
 }
 
+/* FAB */
+
 .fab{
 position:fixed;
 bottom:calc(26px + env(safe-area-inset-bottom));
@@ -215,6 +230,8 @@ z-index:10;
 <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
 </div>
 
+<div class="header-glass">
+
 <div class="title-row">
 <h1>Семейные дела</h1>
 <div class="family-count">👥 <span id="family-count">0</span></div>
@@ -226,6 +243,8 @@ z-index:10;
 <span id="user-name"></span><br>
 <span id="user-stats"></span>
 </div>
+</div>
+
 </div>
 
 </div>
