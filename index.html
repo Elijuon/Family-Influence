@@ -14,18 +14,21 @@ color:white;
 min-height:100vh;
 }
 
+/* TABBAR */
+
 .tabs{
 display:flex;
 justify-content:space-around;
 padding:16px;
 background:rgba(255,255,255,.05);
-backdrop-filter:blur(20px);
+backdrop-filter:blur(25px);
 border-bottom:1px solid rgba(255,255,255,.15);
 }
 
 .tab{
 cursor:pointer;
 opacity:.5;
+transition:.2s;
 }
 
 .tab.active{
@@ -33,14 +36,16 @@ opacity:1;
 color:#3b82f6;
 }
 
+/* SECTIONS */
+
 .section{
 padding:20px;
 display:none;
+animation:fade .25s ease;
 }
 
 .section.active{
 display:block;
-animation:fade .25s ease;
 }
 
 @keyframes fade{
@@ -82,14 +87,6 @@ const API_URL = "https://family-influence-backend.onrender.com";
 
 let currentUser = null;
 
-async function api(path, options={}){
-const res = await fetch(API_URL+path,{
-headers:{ "Content-Type":"application/json" },
-...options
-});
-return res.json();
-}
-
 /* TAB SWITCH */
 
 document.querySelectorAll(".tab").forEach(tab=>{
@@ -102,7 +99,13 @@ document.getElementById(tab.dataset.tab).classList.add("active");
 });
 });
 
-/* LOAD DATA */
+async function api(path, options={}){
+const res = await fetch(API_URL+path,{
+headers:{ "Content-Type":"application/json" },
+...options
+});
+return res.json();
+}
 
 async function loadTasks(){
 const tasks = await api("/api/tasks?family_id="+currentUser.family_id);
