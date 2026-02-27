@@ -1,115 +1,56 @@
 import express from "express";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
-import TelegramBot from "node-telegram-bot-api";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* =======================
-   ENV VARIABLES (гибкие)
-======================= */
+const {
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
+  PORT = 3000
+} = process.env;
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-
-const SUPABASE_SECRET =
-  process.env.SUPABASE_SECRET ||
-  process.env.SUPABASE_SERVICE_ROLE ||
-  process.env.SUPABASE_KEY;
-
-const TELEGRAM_TOKEN =
-  process.env.TELEGRAM_TOKEN ||
-  process.env.TELEGRAM_BOT_TOKEN;
-
-const PORT = process.env.PORT || 3000;
-
-/* =======================
-   DEBUG ENV (чтобы видеть в логах)
-======================= */
-
-console.log("ENV CHECK:");
-console.log("SUPABASE_URL:", SUPABASE_URL ? "OK" : "MISSING");
-console.log("SUPABASE_SECRET:", SUPABASE_SECRET ? "OK" : "MISSING");
-console.log("TELEGRAM_TOKEN:", TELEGRAM_TOKEN ? "OK" : "MISSING");
-
-/* =======================
-   Проверка
-======================= */
-
-if (!SUPABASE_URL || !SUPABASE_SECRET || !TELEGRAM_TOKEN) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("❌ Missing environment variables");
   process.exit(1);
 }
 
-/* =======================
-   Clients
-======================= */
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET);
-const bot = new TelegramBot(TELEGRAM_TOKEN);
-
-/* =======================
-   HEALTH
-======================= */
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY
+);
 
 app.get("/health", (req, res) => {
   res.send("OK");
 });
 
-/* =======================
-   AUTH
-======================= */
+/* ================= AUTH ================= */
 
 app.post("/api/auth", async (req, res) => {
   const { telegram_id, first_name, last_name } = req.body;
 
-  let { data: user } = await supabase
+  const { data: existing } = await supabase
     .from("users")
     .select("*")
     .eq("telegram_id", telegram_id)
     .single();
 
-  if (!user) {
-    const { data: newUser } = await supabase
-      .from("users")
-      .insert({ telegram_id, first_name, last_name })
-      .select()
-      .single();
-    user = newUser;
-  }
+  if (existing) return res.json(existing);
+
+  const { data: user, error } = await supabase
+    .from("users")
+    .insert({ telegram_id, first_name, last_name })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error });
 
   res.json(user);
 });
 
-/* =======================
-   AVATAR
-======================= */
-
-app.get("/api/avatar/:telegramId", async (req, res) => {
-  const { telegramId } = req.params;
-
-  try {
-    const photos = await bot.getUserProfilePhotos(telegramId, { limit: 1 });
-
-    if (photos.total_count > 0) {
-      const fileId = photos.photos[0][0].file_id;
-      const file = await bot.getFile(fileId);
-
-      const url = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${file.file_path}`;
-      return res.json({ url });
-    }
-
-    res.json({ url: null });
-  } catch (e) {
-    console.error("Avatar error:", e.message);
-    res.json({ url: null });
-  }
-});
-
-/* =======================
-   FAMILIES COUNT
-======================= */
+/* ================= FAMILIES ================= */
 
 app.get("/api/families/count", async (req, res) => {
   const { count } = await supabase
@@ -119,53 +60,98 @@ app.get("/api/families/count", async (req, res) => {
   res.json({ count: count || 0 });
 });
 
-/* =======================
-   TASKS
-======================= */
+/* ================= USERS ================= */
+
+app.get("/api/users", async (req, res) => {
+  const { family_id } = req.query;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name")
+    .eq("family_id", family_id);
+
+  if (error) return res.status(500).json({ error });
+
+  res.json(data || []);
+});
+
+/* ================= TASKS ================= */
 
 app.get("/api/tasks", async (req, res) => {
   const { family_id } = req.query;
 
-  if (!family_id) {
-    return res.json([]);
-  }
-
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
-    .select("*")
+    .select(`
+      *,
+      assignee:users!assignee_id(id, first_name)
+    `)
     .eq("family_id", family_id)
     .order("deadline", { ascending: true });
+
+  if (error) return res.status(500).json({ error });
 
   res.json(data || []);
 });
 
 app.post("/api/tasks", async (req, res) => {
-  const { title, deadline, family_id } = req.body;
+  const { title, description, family_id, assignee_id, deadline } = req.body;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
-    .insert({ title, deadline, family_id })
+    .insert({
+      title,
+      description,
+      family_id,
+      assignee_id,
+      deadline
+    })
     .select()
     .single();
+
+  if (error) return res.status(500).json({ error });
 
   res.json(data);
 });
 
-/* =======================
-   BOT START
-======================= */
+/* ================= WISHES ================= */
 
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(
-    msg.chat.id,
-    `👋 Привет, ${msg.from.first_name}!\nОткрой мини-приложение в меню.`
-  );
+app.get("/api/wishes", async (req, res) => {
+  const { family_id } = req.query;
+
+  const { data, error } = await supabase
+    .from("wishes")
+    .select(`
+      *,
+      user:users(id, first_name)
+    `)
+    .eq("family_id", family_id)
+    .order("created_at", { ascending: false });
+
+  if (error) return res.status(500).json({ error });
+
+  res.json(data || []);
 });
 
-/* =======================
-   START SERVER
-======================= */
+app.post("/api/wishes", async (req, res) => {
+  const { title, description, family_id, user_id } = req.body;
+
+  const { data, error } = await supabase
+    .from("wishes")
+    .insert({
+      title,
+      description,
+      family_id,
+      user_id
+    })
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error });
+
+  res.json(data);
+});
 
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
+  console.log(`🚀 Server running on ${PORT}`);
 });
