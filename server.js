@@ -1,181 +1,124 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import TelegramBot from 'node-telegram-bot-api';
-import crypto from 'crypto';
-
-import { supabase } from './lib/supabase.js';
-import { authMiddleware } from './middleware/auth.js';
-
-dotenv.config();
+import express from "express";
+import cors from "cors";
+import { createClient } from "@supabase/supabase-js";
+import TelegramBot from "node-telegram-bot-api";
 
 const app = express();
-
-app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use(
-  rateLimit({
-    windowMs: 60 * 1000,
-    max: 100
-  })
-);
+const {
+  SUPABASE_URL,
+  SUPABASE_SECRET,
+  TELEGRAM_TOKEN,
+  PORT = 3000
+} = process.env;
 
-/* ========================
-   БОТ БЕЗ POLLING
-======================== */
+if (!SUPABASE_URL || !SUPABASE_SECRET || !TELEGRAM_TOKEN) {
+  console.error("❌ Missing environment variables");
+  process.exit(1);
+}
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET);
+const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-/* ========================
-   HEALTH
-======================== */
+// ------------------ HEALTH ------------------
 
-app.get('/health', (req, res) => {
-  res.send('OK');
+app.get("/health", (req, res) => {
+  res.send("OK");
 });
 
-/* ========================
-   AUTH
-======================== */
+// ------------------ AUTH ------------------
 
-app.post('/api/auth', authMiddleware, (req, res) => {
-  res.json(req.user);
+app.post("/api/auth", async (req, res) => {
+  const { telegram_id, first_name, last_name } = req.body;
+
+  let { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("telegram_id", telegram_id)
+    .single();
+
+  if (!user) {
+    const { data: newUser } = await supabase
+      .from("users")
+      .insert({ telegram_id, first_name, last_name })
+      .select()
+      .single();
+    user = newUser;
+  }
+
+  res.json(user);
 });
 
-/* ========================
-   FAMILY
-======================== */
+// ------------------ AVATAR ------------------
 
-app.post('/api/families', authMiddleware, async (req, res) => {
-  const { name } = req.body;
+app.get("/api/avatar/:telegramId", async (req, res) => {
+  const { telegramId } = req.params;
 
-  const invite_code = crypto.randomUUID();
+  try {
+    const photos = await bot.getUserProfilePhotos(telegramId, { limit: 1 });
 
-  const { data: family, error } = await supabase
-    .from('families')
-    .insert({ name, invite_code })
+    if (photos.total_count > 0) {
+      const fileId = photos.photos[0][0].file_id;
+      const file = await bot.getFile(fileId);
+
+      const url = `https://api.telegram.org/file/bot${TELEGRAM_TOKEN}/${file.file_path}`;
+
+      return res.json({ url });
+    }
+
+    res.json({ url: null });
+  } catch (e) {
+    res.json({ url: null });
+  }
+});
+
+// ------------------ FAMILIES COUNT ------------------
+
+app.get("/api/families/count", async (req, res) => {
+  const { count } = await supabase
+    .from("families")
+    .select("*", { count: "exact", head: true });
+
+  res.json({ count: count || 0 });
+});
+
+// ------------------ TASKS ------------------
+
+app.get("/api/tasks", async (req, res) => {
+  const { family_id } = req.query;
+
+  const { data } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("family_id", family_id)
+    .order("deadline", { ascending: true });
+
+  res.json(data || []);
+});
+
+app.post("/api/tasks", async (req, res) => {
+  const { title, deadline, family_id } = req.body;
+
+  const { data } = await supabase
+    .from("tasks")
+    .insert({ title, deadline, family_id })
     .select()
     .single();
 
-  if (error) return res.status(500).json({ error: error.message });
-
-  await supabase
-    .from('users')
-    .update({ family_id: family.id })
-    .eq('id', req.user.id);
-
-  res.json(family);
+  res.json(data);
 });
 
-app.post('/api/families/join', authMiddleware, async (req, res) => {
-  const { invite_code } = req.body;
+// ------------------ START BOT ------------------
 
-  const { data: family } = await supabase
-    .from('families')
-    .select('*')
-    .eq('invite_code', invite_code)
-    .single();
-
-  if (!family) return res.status(404).json({ error: 'Family not found' });
-
-  await supabase
-    .from('users')
-    .update({ family_id: family.id })
-    .eq('id', req.user.id);
-
-  res.json(family);
+bot.onText(/\/start/, (msg) => {
+  bot.sendMessage(
+    msg.chat.id,
+    `👋 Привет, ${msg.from.first_name}!\nОткрой мини-приложение в меню.`
+  );
 });
-
-/* ========================
-   TASKS
-======================== */
-
-app.get('/api/tasks', authMiddleware, async (req, res) => {
-  if (!req.user.family_id)
-    return res.status(403).json({ error: 'No family' });
-
-  const { data: tasks, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('family_id', req.user.family_id)
-    .eq('status', 'active')
-    .order('deadline');
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  res.json(tasks);
-});
-
-app.post('/api/tasks', authMiddleware, async (req, res) => {
-  const { title, description, assignee_id, deadline } = req.body;
-
-  if (!req.user.family_id)
-    return res.status(403).json({ error: 'No family' });
-
-  const { data: task, error } = await supabase
-    .from('tasks')
-    .insert({
-      title,
-      description,
-      assignee_id,
-      creator_id: req.user.id,
-      family_id: req.user.family_id,
-      deadline,
-      status: 'active'
-    })
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ error: error.message });
-
-  // отправляем уведомление исполнителю
-  const { data: assignee } = await supabase
-    .from('users')
-    .select('telegram_id')
-    .eq('id', assignee_id)
-    .single();
-
-  if (assignee?.telegram_id) {
-    await bot.sendMessage(
-      assignee.telegram_id,
-      `🔔 Новая задача: ${title}`
-    );
-  }
-
-  res.json(task);
-});
-
-app.delete('/api/tasks/:id', authMiddleware, async (req, res) => {
-  const { id } = req.params;
-
-  const { data: task } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (!task || task.creator_id !== req.user.id) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  await supabase
-    .from('tasks')
-    .delete()
-    .eq('id', id);
-
-  res.json({ success: true });
-});
-
-/* ========================
-   START
-======================== */
-
-const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+  console.log("Server running on", PORT);
 });
