@@ -8,6 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;background:#0b0f17;}
+
 body{
 font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;
 color:white;
@@ -45,7 +46,8 @@ background:rgba(20,28,40,.35);
 backdrop-filter:blur(18px);
 border:1px solid rgba(255,255,255,.15);
 border-radius:24px;
-padding:18px;margin-bottom:16px;
+padding:18px;
+margin-bottom:16px;
 }
 
 .title-row{
@@ -53,15 +55,37 @@ display:flex;justify-content:space-between;
 align-items:center;margin-bottom:14px;
 }
 
+.family-count{
+display:flex;align-items:center;gap:6px;
+font-size:14px;color:#d0d8e5;
+background:rgba(255,255,255,.05);
+padding:6px 10px;border-radius:20px;
+border:1px solid rgba(255,255,255,.15);
+}
+
+.user-block{display:flex;align-items:center;gap:14px;}
+
+.avatar{
+width:54px;height:54px;border-radius:50%;
+background:rgba(59,130,246,.7);
+display:flex;align-items:center;justify-content:center;
+overflow:hidden;font-weight:600;
+}
+
 .new-task{
 background:rgba(59,130,246,.15);
 border:1px solid rgba(59,130,246,.5);
-border-radius:20px;padding:14px;
-text-align:center;cursor:pointer;
-margin-bottom:16px;
+border-radius:20px;
+padding:14px;text-align:center;
+cursor:pointer;margin-bottom:16px;
 }
 
 .content{flex:1;overflow-y:auto;padding:16px;}
+
+.section{
+font-size:13px;color:#c8d0df;
+text-transform:uppercase;margin-bottom:10px;
+}
 
 .card{
 background:rgba(20,28,40,.35);
@@ -69,6 +93,11 @@ backdrop-filter:blur(18px);
 border:1px solid rgba(255,255,255,.15);
 border-radius:22px;
 padding:16px;margin-bottom:12px;
+}
+
+.task-header{
+display:flex;justify-content:space-between;
+align-items:center;margin-bottom:6px;
 }
 
 .badge{
@@ -105,7 +134,9 @@ transform:scale(.9);
 transition:.3s;
 }
 
-.modal-overlay.active .modal{transform:scale(1);}
+.modal-overlay.active .modal{
+transform:scale(1);
+}
 
 .input{
 width:100%;
@@ -113,8 +144,7 @@ background:rgba(255,255,255,.05);
 border:1px solid rgba(255,255,255,.15);
 border-radius:14px;
 padding:10px 12px;
-color:white;
-margin-bottom:12px;
+color:white;margin-bottom:12px;
 }
 
 .row{display:flex;gap:10px;}
@@ -137,8 +167,7 @@ background:rgba(59,130,246,.4);
 .submit-btn{
 background:#3b82f6;border:none;
 padding:12px;border-radius:14px;
-color:white;width:100%;
-cursor:pointer;
+color:white;width:100%;cursor:pointer;
 }
 </style>
 </head>
@@ -148,16 +177,30 @@ cursor:pointer;
 <div class="app">
 
 <div class="header">
+
 <div class="header-glass">
 <div class="title-row">
 <h1>Семейные дела</h1>
+<div class="family-count">👥 <span id="family-count">0</span></div>
+</div>
+
+<div class="user-block">
+<div class="avatar" id="avatar"></div>
+<div>
+<div id="user-name"></div>
+<div id="user-stats"></div>
+</div>
 </div>
 </div>
 
 <div class="new-task" onclick="openModal()">+ Новая задача</div>
+
 </div>
 
-<div class="content" id="tasks"></div>
+<div class="content">
+<div class="section">Сегодня</div>
+<div id="tasks-container"></div>
+</div>
 
 </div>
 
@@ -172,7 +215,6 @@ cursor:pointer;
 </div>
 
 <input id="title" class="input" placeholder="Название задачи">
-
 <textarea id="description" class="input" placeholder="Описание (необязательно)"></textarea>
 
 <div id="personalBlock">
@@ -198,52 +240,86 @@ cursor:pointer;
 </div>
 </div>
 
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
 
+const tg=window.Telegram.WebApp;
+tg.ready(); tg.expand();
+
 const API_URL="https://family-influence-backend.onrender.com";
+
 let currentUser=null;
+let tasks=[];
 let taskType="personal";
 
-function openModal(){
-document.getElementById("modal").classList.add("active");
-}
+function openModal(){document.getElementById("modal").classList.add("active");}
+function closeModal(){document.getElementById("modal").classList.remove("active");}
 
 document.getElementById("modal").addEventListener("click",e=>{
 if(e.target.id==="modal") closeModal();
 });
 
-function closeModal(){
-document.getElementById("modal").classList.remove("active");
-}
-
 function setType(type){
 taskType=type;
-document.getElementById("typePersonal").classList.toggle("active",type==="personal");
-document.getElementById("typeDeadline").classList.toggle("active",type==="deadline");
-document.getElementById("personalBlock").style.display=type==="personal"?"block":"none";
-document.getElementById("deadlineBlock").style.display=type==="deadline"?"block":"none";
+typePersonal.classList.toggle("active",type==="personal");
+typeDeadline.classList.toggle("active",type==="deadline");
+personalBlock.style.display=type==="personal"?"block":"none";
+deadlineBlock.style.display=type==="deadline"?"block":"none";
 }
 
 function initTime(){
-const hour=document.getElementById("hour");
-const minute=document.getElementById("minute");
-
-for(let i=0;i<24;i++){
+for(let i=0;i<24;i++)
 hour.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
-}
-for(let i=0;i<60;i+=10){
+for(let i=0;i<60;i+=10)
 minute.innerHTML+=`<option value="${i}">${i.toString().padStart(2,'0')}</option>`;
 }
+
+async function api(path,options={}){
+const res=await fetch(API_URL+path,{
+headers:{"Content-Type":"application/json"},
+...options});
+return res.json();
 }
 
-function createTask(){
+function statWord(count){return count===1?"активная":"активных";}
+function overdueWord(count){return count===1?"просроченная":"просроченных";}
+
+async function loadTasks(){
+if(!currentUser.family_id) return;
+tasks=await api("/api/tasks?family_id="+currentUser.family_id);
+renderTasks();
+}
+
+function renderTasks(){
+tasksContainer.innerHTML="";
+const now=new Date();
+const active=tasks.filter(t=>new Date(t.deadline)>now).length;
+const overdue=tasks.filter(t=>new Date(t.deadline)<now).length;
+
+userStats.innerText=`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
+
+tasks.forEach(t=>{
+const div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<div class="task-header">
+<div>${t.title}</div>
+<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
+</div>
+<div>${new Date(t.deadline).toLocaleString()}</div>
+`;
+tasksContainer.appendChild(div);
+});
+}
+
+async function createTask(){
 const title=document.getElementById("title").value.trim();
 if(!title) return alert("Введите название");
 
 let deadline;
+const now=new Date();
 
 if(taskType==="personal"){
-const now=new Date();
 deadline=new Date(
 now.getFullYear(),
 now.getMonth(),
@@ -252,9 +328,7 @@ parseInt(hour.value),
 parseInt(minute.value)
 );
 }else{
-const now=new Date();
-const opt=document.getElementById("deadlineOption").value;
-
+const opt=deadlineOption.value;
 if(opt==="1h") deadline=new Date(now.getTime()+3600000);
 if(opt==="3h") deadline=new Date(now.getTime()+3*3600000);
 if(opt==="12h") deadline=new Date(now.getTime()+12*3600000);
@@ -263,11 +337,38 @@ if(opt==="3d") deadline=new Date(now.getTime()+3*86400000);
 if(opt==="7d") deadline=new Date(now.getTime()+7*86400000);
 }
 
-alert("Дедлайн: "+deadline);
+await api("/api/tasks",{
+method:"POST",
+body:JSON.stringify({
+title,
+deadline,
+family_id:currentUser.family_id
+})
+});
+
 closeModal();
+loadTasks();
+}
+
+async function init(){
+const user=tg.initDataUnsafe?.user;
+if(!user) return;
+
+currentUser=await api("/api/auth",{
+method:"POST",
+body:JSON.stringify({
+telegram_id:user.id,
+first_name:user.first_name,
+last_name:user.last_name||""
+})
+});
+
+userName.innerText=user.first_name;
+await loadTasks();
 }
 
 initTime();
+init();
 
 </script>
 
