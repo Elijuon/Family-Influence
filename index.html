@@ -7,293 +7,69 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:#0b0f17;}
-
 body{
 font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;
+background:#0b0f17;
 color:white;
-min-height:100dvh;
-position:relative;
-overflow:hidden;
+min-height:100vh;
 }
-
-body::before{
-content:"";
-position:fixed;
-inset:0;
-background:url("planet.png") center/cover no-repeat;
-opacity:.6;
-filter:blur(3px) brightness(.85);
-transform:scale(1.05);
-z-index:0;
-}
-
-.app{
-position:relative;
-z-index:2;
-max-width:420px;
-margin:0 auto;
-min-height:100dvh;
-display:flex;
-flex-direction:column;
-padding-bottom:env(safe-area-inset-bottom);
-}
-
-.header{
-padding:16px;
-padding-top:calc(16px + env(safe-area-inset-top));
-}
-
-/* TABBAR */
 
 .tabs{
 display:flex;
 justify-content:space-around;
-align-items:center;
-margin-bottom:18px;
+padding:16px;
 background:rgba(255,255,255,.05);
-backdrop-filter:blur(30px);
-border-radius:40px;
-padding:16px 0;
-border:1px solid rgba(255,255,255,.15);
+backdrop-filter:blur(20px);
+border-bottom:1px solid rgba(255,255,255,.15);
 }
 
 .tab{
-flex:1;
-display:flex;
-justify-content:center;
 cursor:pointer;
-}
-
-.tab svg{
-width:28px;
-height:28px;
-stroke:white;
-stroke-width:2;
-fill:none;
 opacity:.5;
-transition:.25s;
 }
 
-.tab.active svg{
+.tab.active{
 opacity:1;
-stroke:#3b82f6;
-filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
-}
-
-/* GLASS HEADER */
-
-.header-glass{
-background:rgba(20,28,40,.35);
-backdrop-filter:blur(18px);
-border:1px solid rgba(255,255,255,.15);
-border-radius:24px;
-padding:18px;
-margin-bottom:16px;
-}
-
-.title-row{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:14px;
-}
-
-.title-row h1{
-font-size:22px;
-font-weight:600;
-}
-
-.family-count{
-display:flex;
-align-items:center;
-gap:6px;
-font-size:14px;
-color:#d0d8e5;
-background:rgba(255,255,255,.05);
-padding:6px 10px;
-border-radius:20px;
-border:1px solid rgba(255,255,255,.15);
-}
-
-.user-block{
-display:flex;
-align-items:center;
-gap:14px;
-}
-
-.avatar{
-width:54px;
-height:54px;
-border-radius:50%;
-background:rgba(59,130,246,.7);
-display:flex;
-align-items:center;
-justify-content:center;
-font-weight:600;
-font-size:20px;
-overflow:hidden;
-}
-
-.user-info{
-font-size:14px;
-color:rgba(255,255,255,.8);
-}
-
-/* NEW TASK BUTTON */
-
-.new-task{
-background:rgba(59,130,246,.15);
-backdrop-filter:blur(18px);
-border:1px solid rgba(59,130,246,.5);
-border-radius:20px;
-padding:14px;
-text-align:center;
-font-weight:500;
-cursor:pointer;
-transition:.2s;
-margin-bottom:18px;
-}
-
-.new-task:hover{
-background:rgba(59,130,246,.25);
-}
-
-/* CONTENT */
-
-.content{
-flex:1;
-overflow-y:auto;
-padding:16px;
-padding-bottom:80px;
+color:#3b82f6;
 }
 
 .section{
-font-size:13px;
-color:#c8d0df;
-text-transform:uppercase;
-margin-bottom:10px;
-letter-spacing:.5px;
+padding:20px;
+display:none;
+}
+
+.section.active{
+display:block;
+animation:fade .25s ease;
+}
+
+@keyframes fade{
+from{opacity:0;transform:translateY(6px);}
+to{opacity:1;transform:translateY(0);}
 }
 
 .card{
-background:rgba(20,28,40,.35);
-backdrop-filter:blur(18px);
-border:1px solid rgba(255,255,255,.15);
-border-radius:22px;
-padding:16px;
+background:rgba(255,255,255,.05);
+padding:14px;
+border-radius:16px;
 margin-bottom:12px;
-}
-
-.task-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:6px;
-}
-
-.task-title{
-font-weight:600;
-font-size:16px;
-}
-
-.badge{
-font-size:12px;
-padding:4px 10px;
-border-radius:20px;
-background:rgba(220,80,80,.8);
-color:white;
-}
-
-.task-meta{
-font-size:13px;
-color:#d0d8e5;
 }
 </style>
 </head>
 
 <body>
 
-<div class="app">
-
-<div class="header">
-
-<!-- TABBAR -->
 <div class="tabs">
-
-<!-- ЗАДАЧИ -->
-<div class="tab active">
-<svg viewBox="0 0 24 24">
-<rect x="4" y="5" width="16" height="14" rx="3"/>
-<line x1="8" y1="9" x2="16" y2="9"/>
-<line x1="8" y1="13" x2="16" y2="13"/>
-<line x1="8" y1="17" x2="13" y2="17"/>
-<circle cx="6" cy="9" r="1"/>
-<circle cx="6" cy="13" r="1"/>
-<circle cx="6" cy="17" r="1"/>
-</svg>
+<div class="tab active" data-tab="tasks">Задачи</div>
+<div class="tab" data-tab="wishes">Желания</div>
+<div class="tab" data-tab="members">Участники</div>
+<div class="tab" data-tab="settings">Настройки</div>
 </div>
 
-<!-- ЖЕЛАНИЯ -->
-<div class="tab">
-<svg viewBox="0 0 24 24">
-<rect x="3" y="8" width="18" height="13" rx="2"/>
-<path d="M12 8V4"/>
-<path d="M8 4h8"/>
-<path d="M3 12h18"/>
-</svg>
-</div>
-
-<!-- УЧАСТНИКИ -->
-<div class="tab">
-<svg viewBox="0 0 24 24">
-<circle cx="9" cy="8" r="3"/>
-<circle cx="16" cy="9" r="2.5"/>
-<path d="M3 20c0-3 3-5 6-5s6 2 6 5"/>
-</svg>
-</div>
-
-<!-- НАСТРОЙКИ -->
-<div class="tab">
-<svg viewBox="0 0 24 24">
-<circle cx="12" cy="12" r="3"/>
-<path d="M19 12h2M3 12h2M12 3v2M12 19v2"/>
-<path d="M17 7l1.5-1.5M5.5 18.5L7 17"/>
-<path d="M7 7L5.5 5.5M17 17l1.5 1.5"/>
-</svg>
-</div>
-
-</div>
-
-<div class="header-glass">
-
-<div class="title-row">
-<h1>Семейные дела</h1>
-<div class="family-count">👥 <span id="family-count">0</span></div>
-</div>
-
-<div class="user-block">
-<div class="avatar" id="avatar"></div>
-<div class="user-info">
-<span id="user-name"></span><br>
-<span id="user-stats"></span>
-</div>
-</div>
-
-</div>
-
-<div class="new-task" onclick="alert('Форма создания задачи')">
-+ Новая задача
-</div>
-
-</div>
-
-<div class="content">
-<div class="section">Сегодня</div>
-<div id="tasks-container"></div>
-</div>
-
-</div>
+<div id="tasks" class="section active"></div>
+<div id="wishes" class="section"></div>
+<div id="members" class="section"></div>
+<div id="settings" class="section">Настройки</div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
@@ -305,7 +81,6 @@ tg.expand();
 const API_URL = "https://family-influence-backend.onrender.com";
 
 let currentUser = null;
-let tasks = [];
 
 async function api(path, options={}){
 const res = await fetch(API_URL+path,{
@@ -315,64 +90,44 @@ headers:{ "Content-Type":"application/json" },
 return res.json();
 }
 
-function statWord(count){
-return count===1 ? "активная" : "активных";
-}
+/* TAB SWITCH */
 
-function overdueWord(count){
-return count===1 ? "просроченная" : "просроченных";
-}
+document.querySelectorAll(".tab").forEach(tab=>{
+tab.addEventListener("click",()=>{
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
 
-async function loadAvatar(id){
-const data = await api("/api/avatar/"+id);
-if(data.url){
-document.getElementById("avatar").innerHTML =
-`<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-}else{
-document.getElementById("avatar").innerText = currentUser.first_name[0];
-}
-}
+tab.classList.add("active");
+document.getElementById(tab.dataset.tab).classList.add("active");
+});
+});
 
-async function loadFamiliesCount(){
-const data = await api("/api/families/count");
-document.getElementById("family-count").innerText = data.count;
-}
+/* LOAD DATA */
 
 async function loadTasks(){
-if(!currentUser.family_id) return;
-tasks = await api("/api/tasks?family_id="+currentUser.family_id);
-renderTasks();
-}
-
-function renderTasks(){
-const container = document.getElementById("tasks-container");
+const tasks = await api("/api/tasks?family_id="+currentUser.family_id);
+const container = document.getElementById("tasks");
 container.innerHTML="";
-
-const now = new Date();
-const active = tasks.filter(t=>new Date(t.deadline)>now).length;
-const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
-
-document.getElementById("user-stats").innerText =
-`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
-
-if(tasks.length===0){
-container.innerHTML='<div class="card">Нет задач</div>';
-return;
+tasks.forEach(t=>{
+container.innerHTML+=`<div class="card">${t.title}</div>`;
+});
 }
 
-tasks.forEach(t=>{
-const div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<div class="task-header">
-<div class="task-title">${t.title}</div>
-<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
-</div>
-<div class="task-meta">
-${new Date(t.deadline).toLocaleDateString()} · ${new Date(t.deadline).toLocaleTimeString().slice(0,5)}
-</div>
-`;
-container.appendChild(div);
+async function loadWishes(){
+const wishes = await api("/api/wishes?family_id="+currentUser.family_id);
+const container = document.getElementById("wishes");
+container.innerHTML="";
+wishes.forEach(w=>{
+container.innerHTML+=`<div class="card">${w.title}</div>`;
+});
+}
+
+async function loadMembers(){
+const members = await api("/api/users?family_id="+currentUser.family_id);
+const container = document.getElementById("members");
+container.innerHTML="";
+members.forEach(m=>{
+container.innerHTML+=`<div class="card">${m.first_name}</div>`;
 });
 }
 
@@ -389,11 +144,9 @@ last_name:user.last_name||""
 })
 });
 
-document.getElementById("user-name").innerText = user.first_name;
-
-await loadAvatar(user.id);
-await loadFamiliesCount();
 await loadTasks();
+await loadWishes();
+await loadMembers();
 }
 
 init();
