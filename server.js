@@ -24,17 +24,31 @@ app.use(
   })
 );
 
-const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
-  polling: true
-});
+/* ========================
+   БОТ БЕЗ POLLING
+======================== */
+
+const bot = new TelegramBot(process.env.TELEGRAM_TOKEN);
+
+/* ========================
+   HEALTH
+======================== */
 
 app.get('/health', (req, res) => {
   res.send('OK');
 });
 
+/* ========================
+   AUTH
+======================== */
+
 app.post('/api/auth', authMiddleware, (req, res) => {
   res.json(req.user);
 });
+
+/* ========================
+   FAMILY
+======================== */
 
 app.post('/api/families', authMiddleware, async (req, res) => {
   const { name } = req.body;
@@ -76,16 +90,22 @@ app.post('/api/families/join', authMiddleware, async (req, res) => {
   res.json(family);
 });
 
+/* ========================
+   TASKS
+======================== */
+
 app.get('/api/tasks', authMiddleware, async (req, res) => {
   if (!req.user.family_id)
     return res.status(403).json({ error: 'No family' });
 
-  const { data: tasks } = await supabase
+  const { data: tasks, error } = await supabase
     .from('tasks')
     .select('*')
     .eq('family_id', req.user.family_id)
     .eq('status', 'active')
     .order('deadline');
+
+  if (error) return res.status(500).json({ error: error.message });
 
   res.json(tasks);
 });
@@ -96,7 +116,7 @@ app.post('/api/tasks', authMiddleware, async (req, res) => {
   if (!req.user.family_id)
     return res.status(403).json({ error: 'No family' });
 
-  const { data: task } = await supabase
+  const { data: task, error } = await supabase
     .from('tasks')
     .insert({
       title,
@@ -110,14 +130,17 @@ app.post('/api/tasks', authMiddleware, async (req, res) => {
     .select()
     .single();
 
+  if (error) return res.status(500).json({ error: error.message });
+
+  // отправляем уведомление исполнителю
   const { data: assignee } = await supabase
     .from('users')
     .select('telegram_id')
     .eq('id', assignee_id)
     .single();
 
-  if (assignee) {
-    bot.sendMessage(
+  if (assignee?.telegram_id) {
+    await bot.sendMessage(
       assignee.telegram_id,
       `🔔 Новая задача: ${title}`
     );
@@ -146,6 +169,10 @@ app.delete('/api/tasks/:id', authMiddleware, async (req, res) => {
 
   res.json({ success: true });
 });
+
+/* ========================
+   START
+======================== */
 
 const PORT = process.env.PORT || 3000;
 
