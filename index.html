@@ -22,8 +22,8 @@ content:"";
 position:fixed;
 inset:0;
 background:url("planet.png") center/cover no-repeat;
-opacity:.55;
-filter:blur(4px) brightness(.8);
+opacity:.6;
+filter:blur(3px) brightness(.85);
 transform:scale(1.05);
 z-index:0;
 }
@@ -39,72 +39,69 @@ flex-direction:column;
 padding-bottom:env(safe-area-inset-bottom);
 }
 
-/* GLASS TABBAR */
-
-.tabbar-wrap{
+.header{
 padding:16px;
 padding-top:calc(16px + env(safe-area-inset-top));
 }
 
-.tabbar{
+/* TABBAR */
+
+.tabs{
 display:flex;
-justify-content:space-between;
+justify-content:space-around;
 align-items:center;
-background:rgba(25,35,50,.35);
+margin-bottom:18px;
+background:rgba(255,255,255,.05);
 backdrop-filter:blur(30px);
+border-radius:40px;
+padding:16px 0;
 border:1px solid rgba(255,255,255,.15);
-border-radius:32px;
-padding:16px 34px;
-box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
 
-.tab-item{
-width:34px;
-height:34px;
+.tab{
+flex:1;
 display:flex;
-align-items:center;
 justify-content:center;
-opacity:.5;
-transition:.25s ease;
 cursor:pointer;
 }
 
-.tab-item svg{
-width:28px;
-height:28px;
-stroke:rgba(255,255,255,.75);
-stroke-width:1.8;
+.tab svg{
+width:26px;
+height:26px;
+stroke:white;
+stroke-width:2;
 fill:none;
+opacity:.5;
 transition:.25s;
 }
 
-.tab-item.active{
+.tab.active svg{
 opacity:1;
+stroke:#3b82f6;
+filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
 }
 
-.tab-item.active svg{
-stroke:#8ec5ff;
-filter:drop-shadow(0 0 6px rgba(120,170,255,.6));
-}
-
-/* HEADER */
-
-.header{padding:16px;}
+/* GLASS HEADER */
 
 .header-glass{
-background:rgba(25,35,50,.35);
-backdrop-filter:blur(20px);
+background:rgba(20,28,40,.35);
+backdrop-filter:blur(18px);
 border:1px solid rgba(255,255,255,.15);
-border-radius:26px;
-padding:20px;
-margin-bottom:18px;
+border-radius:24px;
+padding:18px;
+margin-bottom:16px;
 }
 
 .title-row{
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:16px;
+margin-bottom:14px;
+}
+
+.title-row h1{
+font-size:22px;
+font-weight:600;
 }
 
 .family-count{
@@ -112,8 +109,9 @@ display:flex;
 align-items:center;
 gap:6px;
 font-size:14px;
-background:rgba(255,255,255,.06);
-padding:6px 12px;
+color:#d0d8e5;
+background:rgba(255,255,255,.05);
+padding:6px 10px;
 border-radius:20px;
 border:1px solid rgba(255,255,255,.15);
 }
@@ -125,33 +123,49 @@ gap:14px;
 }
 
 .avatar{
-width:56px;
-height:56px;
+width:54px;
+height:54px;
 border-radius:50%;
-background:rgba(70,130,255,.7);
+background:rgba(59,130,246,.7);
 display:flex;
 align-items:center;
 justify-content:center;
-overflow:hidden;
 font-weight:600;
 font-size:20px;
+overflow:hidden;
 }
 
-.new-task{
-background:rgba(70,130,255,.15);
-border:1px solid rgba(70,130,255,.5);
-border-radius:22px;
-padding:16px;
-text-align:center;
-cursor:pointer;
-margin-bottom:18px;
-font-weight:500;
+.user-info{
+font-size:14px;
+color:rgba(255,255,255,.8);
 }
+
+/* NEW TASK BUTTON */
+
+.new-task{
+background:rgba(59,130,246,.15);
+backdrop-filter:blur(18px);
+border:1px solid rgba(59,130,246,.5);
+border-radius:20px;
+padding:14px;
+text-align:center;
+font-weight:500;
+cursor:pointer;
+transition:.2s;
+margin-bottom:18px;
+}
+
+.new-task:hover{
+background:rgba(59,130,246,.25);
+}
+
+/* CONTENT */
 
 .content{
 flex:1;
 overflow-y:auto;
 padding:16px;
+padding-bottom:80px;
 }
 
 .section{
@@ -159,29 +173,41 @@ font-size:13px;
 color:#c8d0df;
 text-transform:uppercase;
 margin-bottom:10px;
+letter-spacing:.5px;
 }
 
 .card{
-background:rgba(25,35,50,.35);
-backdrop-filter:blur(20px);
+background:rgba(20,28,40,.35);
+backdrop-filter:blur(18px);
 border:1px solid rgba(255,255,255,.15);
 border-radius:22px;
-padding:18px;
-margin-bottom:14px;
+padding:16px;
+margin-bottom:12px;
 }
 
 .task-header{
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:8px;
+margin-bottom:6px;
+}
+
+.task-title{
+font-weight:600;
+font-size:16px;
 }
 
 .badge{
 font-size:12px;
-padding:5px 12px;
+padding:4px 10px;
 border-radius:20px;
-background:rgba(220,80,80,.85);
+background:rgba(220,80,80,.8);
+color:white;
+}
+
+.task-meta{
+font-size:13px;
+color:#d0d8e5;
 }
 </style>
 </head>
@@ -190,46 +216,17 @@ background:rgba(220,80,80,.85);
 
 <div class="app">
 
-<div class="tabbar-wrap">
-<div class="tabbar">
-
-<div class="tab-item active">
-<svg viewBox="0 0 24 24">
-<rect x="5" y="4" width="14" height="16" rx="3"/>
-<line x1="8" y1="9" x2="16" y2="9"/>
-<line x1="8" y1="13" x2="16" y2="13"/>
-</svg>
-</div>
-
-<div class="tab-item">
-<svg viewBox="0 0 24 24">
-<path d="M3 9h18v12H3z"/>
-<path d="M12 9V4"/>
-</svg>
-</div>
-
-<div class="tab-item">
-<svg viewBox="0 0 24 24">
-<circle cx="8" cy="9" r="3"/>
-<circle cx="16" cy="9" r="3"/>
-<path d="M3 20c1-4 5-6 5-6s4 2 5 6"/>
-</svg>
-</div>
-
-<div class="tab-item">
-<svg viewBox="0 0 24 24">
-<circle cx="12" cy="12" r="3"/>
-<path d="M19.4 15a7.5 7.5 0 000-6"/>
-<path d="M4.6 9a7.5 7.5 0 000 6"/>
-</svg>
-</div>
-
-</div>
-</div>
-
 <div class="header">
 
+<div class="tabs">
+<div class="tab active"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></div>
+<div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg></div>
+<div class="tab"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-3 3-5 5-5s5 2 5 5"/><path d="M11 20c0-3 3-5 5-5s5 2 5 5"/></svg></div>
+<div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
+</div>
+
 <div class="header-glass">
+
 <div class="title-row">
 <h1>Семейные дела</h1>
 <div class="family-count">👥 <span id="family-count">0</span></div>
@@ -237,14 +234,17 @@ background:rgba(220,80,80,.85);
 
 <div class="user-block">
 <div class="avatar" id="avatar"></div>
-<div>
-<div id="user-name"></div>
-<div id="user-stats"></div>
-</div>
+<div class="user-info">
+<span id="user-name"></span><br>
+<span id="user-stats"></span>
 </div>
 </div>
 
-<div class="new-task">+ Новая задача</div>
+</div>
+
+<div class="new-task" onclick="alert('Форма создания задачи')">
++ Новая задача
+</div>
 
 </div>
 
@@ -257,17 +257,15 @@ background:rgba(220,80,80,.85);
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
 const API_URL = "https://family-influence-backend.onrender.com";
 
-const avatarEl = document.getElementById("avatar");
-const userNameEl = document.getElementById("user-name");
-const userStatsEl = document.getElementById("user-stats");
-const familyCountEl = document.getElementById("family-count");
-const tasksContainerEl = document.getElementById("tasks-container");
+let currentUser = null;
+let tasks = [];
 
 async function api(path, options={}){
 const res = await fetch(API_URL+path,{
@@ -277,11 +275,74 @@ headers:{ "Content-Type":"application/json" },
 return res.json();
 }
 
+function statWord(count){
+if(count===1) return "активная";
+return "активных";
+}
+
+function overdueWord(count){
+if(count===1) return "просроченная";
+return "просроченных";
+}
+
+async function loadAvatar(id){
+const data = await api("/api/avatar/"+id);
+if(data.url){
+document.getElementById("avatar").innerHTML =
+`<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+}else{
+document.getElementById("avatar").innerText = currentUser.first_name[0];
+}
+}
+
+async function loadFamiliesCount(){
+const data = await api("/api/families/count");
+document.getElementById("family-count").innerText = data.count;
+}
+
+async function loadTasks(){
+if(!currentUser.family_id) return;
+tasks = await api("/api/tasks?family_id="+currentUser.family_id);
+renderTasks();
+}
+
+function renderTasks(){
+const container = document.getElementById("tasks-container");
+container.innerHTML="";
+
+const now = new Date();
+const active = tasks.filter(t=>new Date(t.deadline)>now).length;
+const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
+
+document.getElementById("user-stats").innerText =
+`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
+
+if(tasks.length===0){
+container.innerHTML='<div class="card">Нет задач</div>';
+return;
+}
+
+tasks.forEach(t=>{
+const div=document.createElement("div");
+div.className="card";
+div.innerHTML=`
+<div class="task-header">
+<div class="task-title">${t.title}</div>
+<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
+</div>
+<div class="task-meta">
+${new Date(t.deadline).toLocaleDateString()} · ${new Date(t.deadline).toLocaleTimeString().slice(0,5)}
+</div>
+`;
+container.appendChild(div);
+});
+}
+
 async function init(){
 const user = tg.initDataUnsafe?.user;
 if(!user) return;
 
-const currentUser = await api("/api/auth",{
+currentUser = await api("/api/auth",{
 method:"POST",
 body:JSON.stringify({
 telegram_id:user.id,
@@ -290,44 +351,11 @@ last_name:user.last_name||""
 })
 });
 
-userNameEl.innerText = user.first_name;
+document.getElementById("user-name").innerText = user.first_name;
 
-avatarEl.innerHTML = user.photo_url
-? `<img src="${user.photo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-: user.first_name[0];
-
-const fam = await api("/api/families/count");
-familyCountEl.innerText = fam.count || 0;
-
-if(currentUser.family_id){
-const tasks = await api("/api/tasks?family_id="+currentUser.family_id);
-renderTasks(tasks);
-}
-}
-
-function renderTasks(tasks){
-tasksContainerEl.innerHTML="";
-const now = new Date();
-
-let active=0, overdue=0;
-
-tasks.forEach(t=>{
-const isOver = new Date(t.deadline)<now;
-if(isOver) overdue++; else active++;
-
-const div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<div class="task-header">
-<div>${t.title}</div>
-<div class="badge">${isOver?"Просрочено":"Активна"}</div>
-</div>
-<div>${new Date(t.deadline).toLocaleString()}</div>
-`;
-tasksContainerEl.appendChild(div);
-});
-
-userStatsEl.innerText=`${active} активных · ${overdue} просроченных`;
+await loadAvatar(user.id);
+await loadFamiliesCount();
+await loadTasks();
 }
 
 init();
