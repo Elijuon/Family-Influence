@@ -540,9 +540,73 @@
         </div>
     </div>
 
-    <!-- Модальные окна (сокращены для читаемости, но полностью рабочие) -->
-    <div id="task-modal" class="modal hidden"><!-- содержимое полное --></div>
-    <div id="wish-modal" class="modal hidden"><!-- содержимое полное --></div>
+    <!-- Модальное окно создания задачи -->
+    <div id="task-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новая задача</h3>
+            <div class="task-type-selector">
+                <div id="task-type-personal" class="task-type-option selected" onclick="setTaskType('personal')">📅 Личная</div>
+                <div id="task-type-deadline" class="task-type-option" onclick="setTaskType('deadline')">⏳ С дедлайном</div>
+            </div>
+            <input type="text" id="task-title" placeholder="Название задачи" required>
+            <textarea id="task-description" placeholder="Описание (необязательно)" rows="2"></textarea>
+            <select id="task-assignee" required>
+                <option value="">Кто выполняет?</option>
+            </select>
+            <div id="personal-task-block">
+                <div class="datetime-row">
+                    <input type="date" id="task-date" required>
+                    <div class="time-selectors">
+                        <select id="task-hour" required>
+                            <option value="">Час</option>
+                            <option value="0">00</option><option value="1">01</option><option value="2">02</option>
+                            <option value="3">03</option><option value="4">04</option><option value="5">05</option>
+                            <option value="6">06</option><option value="7">07</option><option value="8">08</option>
+                            <option value="9">09</option><option value="10">10</option><option value="11">11</option>
+                            <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+                            <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+                            <option value="18">18</option><option value="19">19</option><option value="20">20</option>
+                            <option value="21">21</option><option value="22">22</option><option value="23">23</option>
+                        </select>
+                        <select id="task-minute" required>
+                            <option value="">Мин</option>
+                            <option value="0">00</option><option value="10">10</option><option value="20">20</option>
+                            <option value="30">30</option><option value="40">40</option><option value="50">50</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="deadline-task-block" class="hidden">
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">
+                    <button class="button small" onclick="setDeadlinePreset('1h')">1 час</button>
+                    <button class="button small" onclick="setDeadlinePreset('3h')">3 часа</button>
+                    <button class="button small" onclick="setDeadlinePreset('day')">До конца дня</button>
+                    <button class="button small" onclick="setDeadlinePreset('3days')">3 дня</button>
+                    <button class="button small" onclick="setDeadlinePreset('week')">Неделя</button>
+                </div>
+                <div class="time-input-note" id="deadline-display" style="color:#90a0b0;font-size:12px;">Срок: не выбран</div>
+                <input type="hidden" id="task-deadline-value">
+            </div>
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createTask()">Создать</button>
+                <button class="button secondary" onclick="hideTaskForm()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания желания -->
+    <div id="wish-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Новое желание</h3>
+            <input type="text" id="wish-title" placeholder="Что хотите?" required>
+            <textarea id="wish-description" placeholder="Описание (цвет, размер, модель)" rows="2"></textarea>
+            <input type="url" id="wish-link" placeholder="Ссылка на товар (необязательно)">
+            <div class="modal-buttons">
+                <button class="button primary" onclick="createWish()">Добавить</button>
+                <button class="button secondary" onclick="hideWishForm()">Отмена</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
