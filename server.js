@@ -48,10 +48,10 @@ app.get("/api/families/count", async (req, res) => {
     .from("families")
     .select("*", { count: "exact", head: true });
 
-  res.json({ count });
+  res.json({ count: count || 0 });
 });
 
-/* TASKS */
+/* TASKS GET */
 app.get("/api/tasks", async (req, res) => {
   const { family_id } = req.query;
 
@@ -62,6 +62,20 @@ app.get("/api/tasks", async (req, res) => {
     .order("deadline", { ascending: true });
 
   res.json(data || []);
+});
+
+/* TASKS CREATE */
+app.post("/api/tasks", async (req, res) => {
+  const { title, deadline, family_id } = req.body;
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert([{ title, deadline, family_id }])
+    .select()
+    .single();
+
+  if (error) return res.status(500).json(error);
+  res.json(data);
 });
 
 const PORT = process.env.PORT || 3000;
