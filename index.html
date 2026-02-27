@@ -17,7 +17,6 @@ position:relative;
 overflow:hidden;
 }
 
-/* ФОН */
 body::before{
 content:"";
 position:fixed;
@@ -188,8 +187,6 @@ font-size:13px;
 color:#d0d8e5;
 }
 
-/* FAB */
-
 .fab{
 position:fixed;
 bottom:calc(26px + env(safe-area-inset-bottom));
@@ -332,7 +329,7 @@ const active = tasks.filter(t=>new Date(t.deadline)>now).length;
 const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
 
 document.getElementById("user-stats").innerText =
-`${active} ${pluralize(active,"активная","активные","активных")} · ${overdue} ${pluralize(overdue,"просроченная","просроченные","просроченных")}`;
+`${active} ${pluralize(active,"активная задача","активные задачи","активных задач")} · ${overdue} ${pluralize(overdue,"просроченная задача","просроченные задачи","просроченных задач")}`;
 
 if(tasks.length===0){
 container.innerHTML='<div class="card">Нет задач</div>';
