@@ -31,7 +31,7 @@ body::after{
 content:"";
 position:fixed;
 inset:0;
-background:radial-gradient(circle at 50% 10%, rgba(255,255,255,.07), transparent 60%);
+background:radial-gradient(circle at 50% 10%, rgba(255,255,255,.06), transparent 60%);
 z-index:1;
 }
 
@@ -55,59 +55,37 @@ padding:16px;
 
 .tabs{
 display:flex;
-justify-content:space-between;
-gap:14px;
+justify-content:space-around;
+align-items:center;
 margin-bottom:22px;
 background:rgba(255,255,255,.05);
 backdrop-filter:blur(30px);
-border-radius:50px;
-padding:14px 16px;
+border-radius:40px;
+padding:16px 0;
 }
 
 .tab{
 flex:1;
 display:flex;
-flex-direction:column;
-align-items:center;
-gap:8px;
-font-size:12px;
-color:#9fb0c8;
+justify-content:center;
 cursor:pointer;
 transition:.25s;
 }
 
-.tab-icon{
-width:46px;
-height:46px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(255,255,255,.06);
-backdrop-filter:blur(20px);
-transition:.25s;
-}
-
-.tab-icon svg{
-width:22px;
-height:22px;
+.tab svg{
+width:26px;
+height:26px;
 stroke:white;
 stroke-width:2;
 fill:none;
-opacity:.7;
-}
-
-.tab.active{
-color:white;
-}
-
-.tab.active .tab-icon{
-background:rgba(59,130,246,.6);
-box-shadow:0 0 30px rgba(59,130,246,.8);
+opacity:.5;
+transition:.25s;
 }
 
 .tab.active svg{
 opacity:1;
+filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
+stroke:#3b82f6;
 }
 
 /* TITLE */
@@ -206,9 +184,6 @@ font-size:16px;
 font-size:12px;
 padding:4px 10px;
 border-radius:20px;
-}
-
-.badge.overdue{
 background:rgba(220,80,80,.7);
 color:white;
 }
@@ -250,7 +225,6 @@ transition:.2s;
 <div class="tabs">
 
 <div class="tab active">
-<div class="tab-icon">
 <svg viewBox="0 0 24 24">
 <rect x="4" y="4" width="16" height="16" rx="3"/>
 <line x1="8" y1="8" x2="16" y2="8"/>
@@ -258,22 +232,16 @@ transition:.2s;
 <line x1="8" y1="16" x2="12" y2="16"/>
 </svg>
 </div>
-Задачи
-</div>
 
 <div class="tab">
-<div class="tab-icon">
 <svg viewBox="0 0 24 24">
 <rect x="3" y="8" width="18" height="13" rx="2"/>
 <path d="M12 8V4"/>
 <path d="M8 4h8"/>
 </svg>
 </div>
-Желания
-</div>
 
 <div class="tab">
-<div class="tab-icon">
 <svg viewBox="0 0 24 24">
 <circle cx="8" cy="8" r="3"/>
 <circle cx="16" cy="8" r="3"/>
@@ -281,18 +249,12 @@ transition:.2s;
 <path d="M11 20c0-3 3-5 5-5s5 2 5 5"/>
 </svg>
 </div>
-Участники
-</div>
 
 <div class="tab">
-<div class="tab-icon">
 <svg viewBox="0 0 24 24">
 <circle cx="12" cy="12" r="3"/>
-<path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2"/>
-<path d="M4.6 9a1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2"/>
+<path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/>
 </svg>
-</div>
-Настройки
 </div>
 
 </div>
@@ -318,7 +280,7 @@ transition:.2s;
 <div class="card">
 <div class="task-header">
 <div class="task-title">Заявка</div>
-<div class="badge overdue">Просрочено</div>
+<div class="badge">Просрочено</div>
 </div>
 <div class="task-meta">27.02.2026 · 10:00</div>
 </div>
