@@ -419,10 +419,8 @@ async function init() {
   console.log("currentUser:", currentUser);
 
   if (!currentUser.family_id) {
-    // Показываем экран создания семьи
     renderNoFamilyScreen(user.first_name);
   } else {
-    // Загружаем основное приложение
     renderMainApp(user.first_name);
   }
 }
@@ -488,13 +486,9 @@ function renderMainApp(firstName) {
     </div>
   `;
 
-  // После вставки HTML нужно переинициализировать ссылки на элементы DOM
   initDomElements();
-
-  // Загружаем данные
   loadAll();
 
-  // Переключение табов
   document.querySelectorAll(".tab").forEach(tab => {
     tab.onclick = () => {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
@@ -516,9 +510,9 @@ async function createFamily() {
       body: JSON.stringify({ name, user_id: currentUser.id })
     });
 
-    currentUser.family_id = data.id; // обновляем локально
+    currentUser.family_id = data.id;
     alert(`✅ Семья создана! Код для приглашения: ${data.invite_code}`);
-    renderMainApp(currentUser.first_name); // перезагружаем основное приложение
+    renderMainApp(currentUser.first_name);
   } catch (e) {
     alert("Ошибка: " + e.message);
   }
@@ -543,7 +537,8 @@ async function joinFamily() {
   }
 }
 
-// Инициализация DOM-элементов после перерисовки
+let avatarEl, userNameEl, userStatsEl, familyCountEl, tasksContainer, wishesContainer, membersContainer;
+
 function initDomElements() {
   avatarEl = document.getElementById("avatar");
   userNameEl = document.getElementById("user-name");
@@ -554,10 +549,6 @@ function initDomElements() {
   membersContainer = document.getElementById("members");
 }
 
-// Глобальные переменные для элементов DOM
-let avatarEl, userNameEl, userStatsEl, familyCountEl, tasksContainer, wishesContainer, membersContainer;
-
-// Загрузка всех данных
 async function loadAll() {
   await loadFamilyCount();
   await Promise.all([
@@ -565,11 +556,9 @@ async function loadAll() {
     loadWishes(),
     loadMembers()
   ]);
-  // Устанавливаем аватар (инициал)
   if (avatarEl) avatarEl.innerText = currentUser.first_name[0];
 }
 
-// Загрузка количества семей
 async function loadFamilyCount() {
   try {
     const data = await api("/api/families/count");
@@ -579,7 +568,6 @@ async function loadFamilyCount() {
   }
 }
 
-// ЗАДАЧИ
 async function loadTasks() {
   if (!currentUser.family_id) return;
   try {
@@ -620,7 +608,6 @@ function renderTasks() {
   }
 }
 
-// ЖЕЛАНИЯ
 async function loadWishes() {
   if (!currentUser.family_id || !wishesContainer) return;
   try {
@@ -649,7 +636,6 @@ function renderWishes(wishes) {
   });
 }
 
-// УЧАСТНИКИ
 async function loadMembers() {
   if (!currentUser.family_id || !membersContainer) return;
   try {
@@ -779,13 +765,18 @@ async function createTask() {
 
 // ========== НАСТРОЙКИ ==========
 
-function showInviteCode() {
-  alert("Код приглашения: (пока не реализовано)");
+async function showInviteCode() {
+  try {
+    const data = await api("/api/families/" + currentUser.family_id);
+    alert(`🔑 Код приглашения: ${data.invite_code}`);
+  } catch (e) {
+    alert("Не удалось получить код");
+  }
 }
 
 function leaveFamily() {
   if (confirm("Точно выйти из семьи?")) {
-    // Здесь будет логика выхода
+    // логика выхода
   }
 }
 
@@ -806,10 +797,8 @@ function pluralize(count, one, few, many) {
   return many;
 }
 
-// Запуск
 init();
 
-// Закрытие модалки по клику на фон
 document.getElementById("taskModal").addEventListener("click", (e) => {
   if (e.target.id === "taskModal") closeTaskModal();
 });
