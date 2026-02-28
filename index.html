@@ -447,6 +447,8 @@ async function init() {
     })
   });
 
+  console.log("currentUser:", currentUser); // проверка в консоли
+
   userNameEl.innerText = user.first_name;
   avatarEl.innerText = user.first_name[0]; // инициал
 
@@ -463,7 +465,6 @@ async function loadAll() {
       loadMembers()
     ]);
   } else {
-    // Если семьи нет, можно показать заглушку или предложить создать
     userStatsEl.innerText = "Нет семьи";
   }
 }
@@ -513,7 +514,6 @@ function renderTasks() {
     tasksContainer.appendChild(div);
   });
 
-  // Обновляем статистику в шапке (активные / просроченные)
   userStatsEl.innerText = `${active} ${pluralize(active, "активная", "активные", "активных")} · ${overdue} ${pluralize(overdue, "просроченная", "просроченные", "просроченных")}`;
 }
 
@@ -578,8 +578,12 @@ function renderMembers(members) {
 // ========== МОДАЛКА СОЗДАНИЯ ЗАДАЧИ ==========
 
 function openCreateTaskModal() {
+  // Проверяем, есть ли семья
+  if (!currentUser?.family_id) {
+    alert("Сначала нужно создать или присоединиться к семье.");
+    return;
+  }
   document.getElementById("taskModal").classList.add("active");
-  // Заполняем селекты времени (если ещё не заполнены)
   fillTimeSelects();
 }
 
@@ -611,6 +615,12 @@ function setTaskType(type) {
 }
 
 async function createTask() {
+  if (!currentUser?.family_id) {
+    alert("Сначала нужно создать или присоединиться к семье.");
+    closeTaskModal();
+    return;
+  }
+
   const title = document.getElementById("taskTitle").value.trim();
   if (!title) return alert("Введите название задачи");
 
@@ -651,17 +661,15 @@ async function createTask() {
         description,
         deadline,
         family_id: currentUser.family_id,
-        assignee_id: currentUser.id,   // пока назначаем на себя
+        assignee_id: currentUser.id,
         creator_id: currentUser.id
       })
     });
 
     closeTaskModal();
-    // Очищаем поля
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDesc").value = "";
-    // Перезагружаем задачи
-    await loadTasks();
+    await loadTasks(); // перезагружаем список задач
   } catch (e) {
     alert("Ошибка при создании задачи: " + e.message);
   }
