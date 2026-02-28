@@ -39,12 +39,44 @@ flex-direction:column;
 padding-bottom:env(safe-area-inset-bottom);
 }
 
+/* ===== NO FAMILY SCREEN ===== */
+.no-family-screen{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+flex:1;
+padding:20px;
+text-align:center;
+}
+
+.no-family-screen h2{
+font-size:24px;
+margin-bottom:8px;
+}
+
+.no-family-screen p{
+color:#a0b0c0;
+margin-bottom:24px;
+}
+
+.no-family-screen button{
+width:100%;
+max-width:300px;
+margin:8px 0;
+}
+
+/* ===== MAIN APP ===== */
+.main-app{
+display:flex;
+flex-direction:column;
+height:100%;
+}
+
 .header{
 padding:16px;
 padding-top:calc(16px + env(safe-area-inset-top));
 }
-
-/* ===== TABBAR ===== */
 
 .tabs{
 display:flex;
@@ -83,8 +115,6 @@ opacity:1;
 stroke:#3b82f6;
 filter:drop-shadow(0 0 10px rgba(59,130,246,.9));
 }
-
-/* ===== HEADER GLASS ===== */
 
 .header-glass{
 background:rgba(20,28,40,.35);
@@ -132,8 +162,6 @@ font-size:20px;
 overflow:hidden;
 }
 
-/* ===== NEW TASK BUTTON ===== */
-
 .new-task{
 background:rgba(59,130,246,.15);
 backdrop-filter:blur(18px);
@@ -145,8 +173,6 @@ font-weight:500;
 cursor:pointer;
 margin-bottom:18px;
 }
-
-/* ===== CONTENT ===== */
 
 .content{
 flex:1;
@@ -298,59 +324,23 @@ width:100%;
 cursor:pointer;
 margin-top:8px;
 }
+
+.button{
+background:rgba(59,130,246,.15);
+border:1px solid rgba(59,130,246,.5);
+border-radius:20px;
+padding:14px;
+text-align:center;
+font-weight:500;
+cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div class="app">
-
-<div class="header">
-
-<div class="tabs">
-<div class="tab active" data-tab="tasks">
-<svg viewBox="0 0 24 24"><line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="12" y2="17"/></svg>
-</div>
-<div class="tab" data-tab="wishes">
-<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
-</div>
-<div class="tab" data-tab="members">
-<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/></svg>
-</div>
-<div class="tab" data-tab="settings">
-<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3"/></svg>
-</div>
-</div>
-
-<div class="header-glass">
-<div class="title-row">
-<h2>Семейные дела</h2>
-<div class="family-count">👥 <span id="family-count">0</span></div>
-</div>
-
-<div class="user-block">
-<div class="avatar" id="avatar"></div>
-<div>
-<div id="user-name"></div>
-<div id="user-stats"></div>
-</div>
-</div>
-</div>
-
-<div class="new-task" onclick="openCreateTaskModal()">+ Новая задача</div>
-
-</div>
-
-<div class="content">
-<div id="tasks" class="section active"></div>
-<div id="wishes" class="section"></div>
-<div id="members" class="section"></div>
-<div id="settings" class="section">
-  <div class="card" onclick="showInviteCode()">🔑 Код приглашения</div>
-  <div class="card" onclick="leaveFamily()">🚪 Выйти из семьи</div>
-</div>
-</div>
-
+  <!-- Сюда будет подставлен либо экран без семьи, либо основное приложение -->
 </div>
 
 <!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЗАДАЧИ -->
@@ -364,7 +354,6 @@ margin-top:8px;
     <input id="taskTitle" class="input" placeholder="Название задачи">
     <textarea id="taskDesc" class="input" placeholder="Описание (необязательно)" rows="2"></textarea>
 
-    <!-- Блок для личной задачи (дата + время) -->
     <div id="personalBlock">
       <div class="row">
         <select id="taskHour" class="input"></select>
@@ -372,7 +361,6 @@ margin-top:8px;
       </div>
     </div>
 
-    <!-- Блок для задачи с дедлайном (пресеты) -->
     <div id="deadlineBlock" style="display:none">
       <select id="deadlineOption" class="input">
         <option value="1h">1 час</option>
@@ -401,25 +389,6 @@ let currentUser = null;
 let tasks = [];
 let taskType = "personal";
 
-// Элементы DOM
-const avatarEl = document.getElementById("avatar");
-const userNameEl = document.getElementById("user-name");
-const userStatsEl = document.getElementById("user-stats");
-const familyCountEl = document.getElementById("family-count");
-const tasksContainer = document.getElementById("tasks");
-const wishesContainer = document.getElementById("wishes");
-const membersContainer = document.getElementById("members");
-
-// Переключение табов
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.tab).classList.add("active");
-  };
-});
-
 // API helper
 async function api(path, opt = {}) {
   const res = await fetch(API + path, {
@@ -447,33 +416,164 @@ async function init() {
     })
   });
 
-  console.log("currentUser:", currentUser); // проверка в консоли
+  console.log("currentUser:", currentUser);
 
-  userNameEl.innerText = user.first_name;
-  avatarEl.innerText = user.first_name[0]; // инициал
-
-  // Загружаем все данные
-  await loadAll();
+  if (!currentUser.family_id) {
+    // Показываем экран создания семьи
+    renderNoFamilyScreen(user.first_name);
+  } else {
+    // Загружаем основное приложение
+    renderMainApp(user.first_name);
+  }
 }
 
+// Экран без семьи
+function renderNoFamilyScreen(firstName) {
+  document.querySelector(".app").innerHTML = `
+    <div class="no-family-screen">
+      <h2>👋 Привет, ${firstName}!</h2>
+      <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+      <button class="button" onclick="createFamily()">Создать семью</button>
+      <button class="button" onclick="joinFamily()">Присоединиться по коду</button>
+    </div>
+  `;
+}
+
+// Основное приложение
+function renderMainApp(firstName) {
+  document.querySelector(".app").innerHTML = `
+    <div class="main-app">
+      <div class="header">
+        <div class="tabs">
+          <div class="tab active" data-tab="tasks">
+            <svg viewBox="0 0 24 24"><line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="12" y2="17"/></svg>
+          </div>
+          <div class="tab" data-tab="wishes">
+            <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+          </div>
+          <div class="tab" data-tab="members">
+            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/></svg>
+          </div>
+          <div class="tab" data-tab="settings">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3"/></svg>
+          </div>
+        </div>
+
+        <div class="header-glass">
+          <div class="title-row">
+            <h2>Семейные дела</h2>
+            <div class="family-count">👥 <span id="family-count">0</span></div>
+          </div>
+          <div class="user-block">
+            <div class="avatar" id="avatar"></div>
+            <div>
+              <div id="user-name">${firstName}</div>
+              <div id="user-stats"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="new-task" onclick="openCreateTaskModal()">+ Новая задача</div>
+      </div>
+
+      <div class="content">
+        <div id="tasks" class="section active"></div>
+        <div id="wishes" class="section"></div>
+        <div id="members" class="section"></div>
+        <div id="settings" class="section">
+          <div class="card" onclick="showInviteCode()">🔑 Код приглашения</div>
+          <div class="card" onclick="leaveFamily()">🚪 Выйти из семьи</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // После вставки HTML нужно переинициализировать ссылки на элементы DOM
+  initDomElements();
+
+  // Загружаем данные
+  loadAll();
+
+  // Переключение табов
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    };
+  });
+}
+
+// Создание семьи
+async function createFamily() {
+  const name = prompt("Введите название семьи", "Моя семья");
+  if (!name) return;
+
+  try {
+    const data = await api("/api/families", {
+      method: "POST",
+      body: JSON.stringify({ name, user_id: currentUser.id })
+    });
+
+    currentUser.family_id = data.id; // обновляем локально
+    alert(`✅ Семья создана! Код для приглашения: ${data.invite_code}`);
+    renderMainApp(currentUser.first_name); // перезагружаем основное приложение
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// Присоединение к семье
+async function joinFamily() {
+  const code = prompt("Введите код приглашения");
+  if (!code) return;
+
+  try {
+    const data = await api("/api/families/join", {
+      method: "POST",
+      body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+    });
+
+    currentUser.family_id = data.id;
+    alert("✅ Вы присоединились к семье!");
+    renderMainApp(currentUser.first_name);
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// Инициализация DOM-элементов после перерисовки
+function initDomElements() {
+  avatarEl = document.getElementById("avatar");
+  userNameEl = document.getElementById("user-name");
+  userStatsEl = document.getElementById("user-stats");
+  familyCountEl = document.getElementById("family-count");
+  tasksContainer = document.getElementById("tasks");
+  wishesContainer = document.getElementById("wishes");
+  membersContainer = document.getElementById("members");
+}
+
+// Глобальные переменные для элементов DOM
+let avatarEl, userNameEl, userStatsEl, familyCountEl, tasksContainer, wishesContainer, membersContainer;
+
+// Загрузка всех данных
 async function loadAll() {
   await loadFamilyCount();
-  if (currentUser.family_id) {
-    await Promise.all([
-      loadTasks(),
-      loadWishes(),
-      loadMembers()
-    ]);
-  } else {
-    userStatsEl.innerText = "Нет семьи";
-  }
+  await Promise.all([
+    loadTasks(),
+    loadWishes(),
+    loadMembers()
+  ]);
+  // Устанавливаем аватар (инициал)
+  if (avatarEl) avatarEl.innerText = currentUser.first_name[0];
 }
 
 // Загрузка количества семей
 async function loadFamilyCount() {
   try {
     const data = await api("/api/families/count");
-    familyCountEl.innerText = data.count;
+    if (familyCountEl) familyCountEl.innerText = data.count;
   } catch (e) {
     console.warn("Не удалось загрузить счётчик семей", e);
   }
@@ -487,11 +587,12 @@ async function loadTasks() {
     renderTasks();
   } catch (e) {
     console.warn("Ошибка загрузки задач", e);
-    tasksContainer.innerHTML = '<div class="card">Ошибка загрузки</div>';
+    if (tasksContainer) tasksContainer.innerHTML = '<div class="card">Ошибка загрузки</div>';
   }
 }
 
 function renderTasks() {
+  if (!tasksContainer) return;
   tasksContainer.innerHTML = "";
   const now = new Date();
 
@@ -514,12 +615,14 @@ function renderTasks() {
     tasksContainer.appendChild(div);
   });
 
-  userStatsEl.innerText = `${active} ${pluralize(active, "активная", "активные", "активных")} · ${overdue} ${pluralize(overdue, "просроченная", "просроченные", "просроченных")}`;
+  if (userStatsEl) {
+    userStatsEl.innerText = `${active} ${pluralize(active, "активная", "активные", "активных")} · ${overdue} ${pluralize(overdue, "просроченная", "просроченные", "просроченных")}`;
+  }
 }
 
 // ЖЕЛАНИЯ
 async function loadWishes() {
-  if (!currentUser.family_id) return;
+  if (!currentUser.family_id || !wishesContainer) return;
   try {
     const data = await api("/api/wishes?family_id=" + currentUser.family_id);
     renderWishes(data);
@@ -548,7 +651,7 @@ function renderWishes(wishes) {
 
 // УЧАСТНИКИ
 async function loadMembers() {
-  if (!currentUser.family_id) return;
+  if (!currentUser.family_id || !membersContainer) return;
   try {
     const data = await api("/api/users?family_id=" + currentUser.family_id);
     renderMembers(data);
@@ -578,7 +681,6 @@ function renderMembers(members) {
 // ========== МОДАЛКА СОЗДАНИЯ ЗАДАЧИ ==========
 
 function openCreateTaskModal() {
-  // Проверяем, есть ли семья
   if (!currentUser?.family_id) {
     alert("Сначала нужно создать или присоединиться к семье.");
     return;
@@ -669,13 +771,13 @@ async function createTask() {
     closeTaskModal();
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDesc").value = "";
-    await loadTasks(); // перезагружаем список задач
+    await loadTasks();
   } catch (e) {
     alert("Ошибка при создании задачи: " + e.message);
   }
 }
 
-// ========== НАСТРОЙКИ (заглушки) ==========
+// ========== НАСТРОЙКИ ==========
 
 function showInviteCode() {
   alert("Код приглашения: (пока не реализовано)");
