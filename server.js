@@ -37,7 +37,6 @@ app.post("/api/auth", async (req, res) => {
       .select()
       .single();
 
-    // Создаём пользователя и привязываем к семье
     const { data: newUser } = await supabase
       .from("users")
       .insert([{
@@ -53,6 +52,79 @@ app.post("/api/auth", async (req, res) => {
   }
 
   res.json(user);
+});
+
+/* ================= FAMILIES ================= */
+
+// Создание семьи
+app.post("/api/families", async (req, res) => {
+  const { name, user_id } = req.body;
+  const invite_code = Math.random().toString(36).substring(7);
+
+  const { data: family, error: familyError } = await supabase
+    .from("families")
+    .insert([{ name, invite_code }])
+    .select()
+    .single();
+
+  if (familyError) {
+    return res.status(500).json({ error: familyError.message });
+  }
+
+  // Привязываем пользователя к новой семье
+  const { error: userError } = await supabase
+    .from("users")
+    .update({ family_id: family.id })
+    .eq("id", user_id);
+
+  if (userError) {
+    return res.status(500).json({ error: userError.message });
+  }
+
+  res.json({ ...family, invite_code });
+});
+
+// Присоединение к семье по коду
+app.post("/api/families/join", async (req, res) => {
+  const { invite_code, user_id } = req.body;
+
+  const { data: family, error: familyError } = await supabase
+    .from("families")
+    .select("id")
+    .eq("invite_code", invite_code)
+    .single();
+
+  if (familyError || !family) {
+    return res.status(404).json({ error: "Семья не найдена" });
+  }
+
+  const { error: userError } = await supabase
+    .from("users")
+    .update({ family_id: family.id })
+    .eq("id", user_id);
+
+  if (userError) {
+    return res.status(500).json({ error: userError.message });
+  }
+
+  res.json(family);
+});
+
+// Получение информации о семье (для кода приглашения)
+app.get("/api/families/:id", async (req, res) => {
+  const { id } = req.params;
+
+  const { data: family, error } = await supabase
+    .from("families")
+    .select("invite_code")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    return res.status(404).json({ error: "Семья не найдена" });
+  }
+
+  res.json(family);
 });
 
 /* ================= TASKS ================= */
