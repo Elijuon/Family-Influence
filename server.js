@@ -7,8 +7,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Проверка переменных окружения
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("❌ Missing environment variables");
+  console.error("❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env");
   process.exit(1);
 }
 
@@ -17,117 +18,66 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-/* ================= AUTH ================= */
+// ==================== AUTH ====================
 
 app.post("/api/auth", async (req, res) => {
   const { telegram_id, first_name, last_name } = req.body;
 
-  let { data: user } = await supabase
+  // Ищем пользователя
+  const { data: existingUser } = await supabase
     .from("users")
     .select("*")
     .eq("telegram_id", telegram_id)
     .single();
 
-  if (!user) {
-    // Создаём новую семью с уникальным кодом приглашения
-    const invite_code = Math.random().toString(36).substring(7);
-    const { data: family } = await supabase
-      .from("families")
-      .insert([{ name: "Семья", invite_code }])
-      .select()
-      .single();
-
-    const { data: newUser } = await supabase
-      .from("users")
-      .insert([{
-        telegram_id,
-        first_name,
-        last_name,
-        family_id: family.id
-      }])
-      .select()
-      .single();
-
-    return res.json(newUser);
+  if (existingUser) {
+    return res.json(existingUser);
   }
 
-  res.json(user);
-});
-
-/* ================= FAMILIES ================= */
-
-// Создание семьи
-app.post("/api/families", async (req, res) => {
-  const { name, user_id } = req.body;
-  const invite_code = Math.random().toString(36).substring(7);
-
+  // Создаём новую семью
+  const inviteCode = Math.random().toString(36).substring(7);
   const { data: family, error: familyError } = await supabase
     .from("families")
-    .insert([{ name, invite_code }])
+    .insert([{ name: "Семья", invite_code: inviteCode }])
     .select()
     .single();
 
   if (familyError) {
-    return res.status(500).json({ error: familyError.message });
+    console.error("Ошибка создания семьи:", familyError);
+    return res.status(500).json({ error: "Ошибка создания семьи" });
   }
 
-  // Привязываем пользователя к новой семье
-  const { error: userError } = await supabase
+  // Создаём пользователя
+  const { data: newUser, error: userError } = await supabase
     .from("users")
-    .update({ family_id: family.id })
-    .eq("id", user_id);
-
-  if (userError) {
-    return res.status(500).json({ error: userError.message });
-  }
-
-  res.json({ ...family, invite_code });
-});
-
-// Присоединение к семье по коду
-app.post("/api/families/join", async (req, res) => {
-  const { invite_code, user_id } = req.body;
-
-  const { data: family, error: familyError } = await supabase
-    .from("families")
-    .select("id")
-    .eq("invite_code", invite_code)
+    .insert([{
+      telegram_id,
+      first_name,
+      last_name,
+      family_id: family.id
+    }])
+    .select()
     .single();
 
-  if (familyError || !family) {
-    return res.status(404).json({ error: "Семья не найдена" });
-  }
-
-  const { error: userError } = await supabase
-    .from("users")
-    .update({ family_id: family.id })
-    .eq("id", user_id);
-
   if (userError) {
-    return res.status(500).json({ error: userError.message });
+    console.error("Ошибка создания пользователя:", userError);
+    return res.status(500).json({ error: "Ошибка создания пользователя" });
   }
 
-  res.json(family);
+  res.json(newUser);
 });
 
-// Получение информации о семье (для кода приглашения)
-app.get("/api/families/:id", async (req, res) => {
-  const { id } = req.params;
+// ==================== FAMILIES ====================
 
-  const { data: family, error } = await supabase
+app.get("/api/families/count", async (req, res) => {
+  const { count } = await supabase
     .from("families")
-    .select("invite_code")
-    .eq("id", id)
-    .single();
+    .select("*", { count: "exact", head: true });
 
-  if (error) {
-    return res.status(404).json({ error: "Семья не найдена" });
-  }
-
-  res.json(family);
+  res.json({ count: count || 0 });
 });
 
-/* ================= TASKS ================= */
+// ==================== TASKS ====================
 
 app.get("/api/tasks", async (req, res) => {
   const { family_id } = req.query;
@@ -143,94 +93,42 @@ app.get("/api/tasks", async (req, res) => {
 });
 
 app.post("/api/tasks", async (req, res) => {
-  const { title, description, deadline, family_id, assignee_id, creator_id } = req.body;
+  const { title, description, deadline, family_id } = req.body;
 
-  if (!family_id) {
-    return res.status(400).json({ error: "family_id is required" });
+  if (!title || !deadline || !family_id) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   const { data, error } = await supabase
     .from("tasks")
     .insert([{
       title,
-      description,
+      description: description || null,
       deadline,
       family_id,
-      assignee_id: assignee_id || null,
-      creator_id: creator_id || null
+      assignee_id: null, // можно доработать позже
+      creator_id: null
     }])
     .select()
     .single();
 
   if (error) {
-    console.error(error);
+    console.error("Ошибка создания задачи:", error);
     return res.status(500).json({ error: error.message });
   }
+
   res.json(data);
 });
 
-/* ================= WISHES ================= */
+// ==================== AVATAR (заглушка) ====================
 
-app.get("/api/wishes", async (req, res) => {
-  const { family_id } = req.query;
-  if (!family_id) return res.json([]);
-
-  const { data } = await supabase
-    .from("wishes")
-    .select(`
-      *,
-      user:users(first_name, last_name)
-    `)
-    .eq("family_id", family_id)
-    .order("created_at", { ascending: false });
-
-  res.json(data || []);
-});
-
-app.post("/api/wishes", async (req, res) => {
-  const { title, description, link, user_id, family_id } = req.body;
-
-  const { data, error } = await supabase
-    .from("wishes")
-    .insert([{ title, description, link, user_id, family_id }])
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message });
-  }
-  res.json(data);
-});
-
-/* ================= USERS ================= */
-
-app.get("/api/users", async (req, res) => {
-  const { family_id } = req.query;
-  if (!family_id) return res.json([]);
-
-  const { data } = await supabase
-    .from("users")
-    .select("id, first_name, last_name")
-    .eq("family_id", family_id);
-
-  res.json(data || []);
-});
-
-/* ================= FAMILIES COUNT ================= */
-
-app.get("/api/families/count", async (req, res) => {
-  const { count } = await supabase
-    .from("families")
-    .select("*", { count: "exact", head: true });
-
-  res.json({ count: count || 0 });
-});
-
-/* ================= AVATAR (заглушка) ================= */
 app.get("/api/avatar/:id", (req, res) => {
   res.json({ url: null });
 });
 
+// ==================== ЗАПУСК ====================
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("✅ Server running on port", PORT));
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
