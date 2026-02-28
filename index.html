@@ -39,12 +39,44 @@ flex-direction:column;
 padding-bottom:env(safe-area-inset-bottom);
 }
 
+/* ===== NO FAMILY SCREEN ===== */
+.no-family-screen{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+flex:1;
+padding:20px;
+text-align:center;
+}
+
+.no-family-screen h2{
+font-size:24px;
+margin-bottom:8px;
+}
+
+.no-family-screen p{
+color:#a0b0c0;
+margin-bottom:24px;
+}
+
+.no-family-screen button{
+width:100%;
+max-width:300px;
+margin:8px 0;
+}
+
+/* ===== MAIN APP ===== */
+.main-app{
+display:flex;
+flex-direction:column;
+height:100%;
+}
+
 .header{
 padding:16px;
 padding-top:calc(16px + env(safe-area-inset-top));
 }
-
-/* TABBAR */
 
 .tabs{
 display:flex;
@@ -80,8 +112,6 @@ opacity:1;
 stroke:#3b82f6;
 filter:drop-shadow(0 0 12px rgba(59,130,246,.9));
 }
-
-/* GLASS HEADER */
 
 .header-glass{
 background:rgba(20,28,40,.35);
@@ -140,8 +170,6 @@ font-size:14px;
 color:rgba(255,255,255,.8);
 }
 
-/* NEW TASK BUTTON */
-
 .new-task{
 background:rgba(59,130,246,.15);
 backdrop-filter:blur(18px);
@@ -159,8 +187,6 @@ margin-bottom:18px;
 background:rgba(59,130,246,.25);
 }
 
-/* CONTENT */
-
 .content{
 flex:1;
 overflow-y:auto;
@@ -168,13 +194,8 @@ padding:16px;
 padding-bottom:80px;
 }
 
-.section{
-font-size:13px;
-color:#c8d0df;
-text-transform:uppercase;
-margin-bottom:10px;
-letter-spacing:.5px;
-}
+.section{display:none;}
+.section.active{display:block;}
 
 .card{
 background:rgba(20,28,40,.35);
@@ -203,11 +224,205 @@ padding:4px 10px;
 border-radius:20px;
 background:rgba(220,80,80,.8);
 color:white;
+display:inline-block;
 }
 
 .task-meta{
 font-size:13px;
 color:#d0d8e5;
+margin-top:8px;
+}
+
+.task-actions{
+display:flex;
+gap:8px;
+margin-top:8px;
+justify-content:flex-end;
+}
+
+.task-actions button{
+padding:4px 12px;
+border-radius:20px;
+border:none;
+cursor:pointer;
+font-size:12px;
+}
+
+.btn-complete{
+background:#22c55e;
+color:white;
+}
+
+.btn-delete{
+background:#ef4444;
+color:white;
+}
+
+.wish-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.wish-author{
+color:#a0b0c0;
+font-size:13px;
+}
+
+.wish-actions{
+display:flex;
+gap:8px;
+margin-top:8px;
+justify-content:flex-end;
+}
+
+.member-card{
+display:flex;
+align-items:center;
+gap:14px;
+}
+
+.member-avatar{
+width:44px;
+height:44px;
+border-radius:50%;
+background:rgba(100,150,250,.3);
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:600;
+}
+
+.member-name{
+font-weight:500;
+}
+
+.member-role{
+font-size:13px;
+color:#a0b0c0;
+}
+
+.settings-item{
+cursor:pointer;
+transition:.2s;
+}
+
+.settings-item:hover{
+background:rgba(255,255,255,.1);
+}
+
+/* ===== MODAL ===== */
+.modal-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.4);
+backdrop-filter:blur(6px);
+display:flex;
+align-items:center;
+justify-content:center;
+opacity:0;
+visibility:hidden;
+transition:.3s;
+z-index:50;
+}
+
+.modal-overlay.active{
+opacity:1;
+visibility:visible;
+}
+
+.modal{
+width:90%;
+max-width:360px;
+background:rgba(20,28,40,.9);
+backdrop-filter:blur(30px);
+border:1px solid rgba(255,255,255,.2);
+border-radius:24px;
+padding:20px;
+transform:scale(.9);
+transition:.3s;
+}
+
+.modal-overlay.active .modal{
+transform:scale(1);
+}
+
+.modal h2{
+margin-bottom:16px;
+font-size:20px;
+}
+
+.modal .input{
+width:100%;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.15);
+border-radius:14px;
+padding:10px 12px;
+color:white;
+margin-bottom:12px;
+}
+
+.modal .input:focus{
+outline:none;
+border-color:#3b82f6;
+}
+
+.modal .row{
+display:flex;
+gap:10px;
+}
+
+.modal .toggle{
+display:flex;
+background:rgba(255,255,255,.05);
+border-radius:14px;
+margin-bottom:12px;
+overflow:hidden;
+}
+
+.modal .toggle div{
+flex:1;
+text-align:center;
+padding:10px;
+cursor:pointer;
+transition:.2s;
+}
+
+.modal .toggle .active{
+background:rgba(59,130,246,.4);
+}
+
+.modal .submit-btn{
+background:#3b82f6;
+border:none;
+padding:12px;
+border-radius:14px;
+color:white;
+width:100%;
+cursor:pointer;
+font-weight:500;
+margin-top:8px;
+}
+
+.modal .close-btn{
+background:transparent;
+border:1px solid rgba(255,255,255,.2);
+padding:10px;
+border-radius:14px;
+color:white;
+width:100%;
+cursor:pointer;
+margin-top:8px;
+}
+
+.button{
+background:rgba(59,130,246,.15);
+border:1px solid rgba(59,130,246,.5);
+border-radius:20px;
+padding:14px;
+text-align:center;
+font-weight:500;
+cursor:pointer;
 }
 </style>
 </head>
@@ -215,149 +430,539 @@ color:#d0d8e5;
 <body>
 
 <div class="app">
-
-<div class="header">
-
-<div class="tabs">
-<div class="tab active"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg></div>
-<div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg></div>
-<div class="tab"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M3 20c0-3 3-5 5-5s5 2 5 5"/><path d="M11 20c0-3 3-5 5-5s5 2 5 5"/></svg></div>
-<div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1l2.1-2.1M17 7l2.1-2.1"/></svg></div>
+  <!-- Динамически подставляется либо no-family, либо main-app -->
 </div>
 
-<div class="header-glass">
+<!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЗАДАЧИ -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h2>Новая задача</h2>
+    <div class="toggle">
+      <div id="typePersonal" class="active" onclick="setTaskType('personal')">Личная</div>
+      <div id="typeDeadline" onclick="setTaskType('deadline')">С дедлайном</div>
+    </div>
+    <input id="taskTitle" class="input" placeholder="Название задачи">
+    <textarea id="taskDesc" class="input" placeholder="Описание (необязательно)" rows="2"></textarea>
 
-<div class="title-row">
-<h1>Семейные дела</h1>
-<div class="family-count">👥 <span id="family-count">0</span></div>
-</div>
+    <!-- Блок для личной задачи (дата + время) -->
+    <div id="personalBlock">
+      <div class="row">
+        <select id="taskHour" class="input"></select>
+        <select id="taskMinute" class="input"></select>
+      </div>
+    </div>
 
-<div class="user-block">
-<div class="avatar" id="avatar"></div>
-<div class="user-info">
-<span id="user-name"></span><br>
-<span id="user-stats"></span>
-</div>
-</div>
+    <!-- Блок для задачи с дедлайном (пресеты) -->
+    <div id="deadlineBlock" style="display:none">
+      <select id="deadlineOption" class="input">
+        <option value="1h">1 час</option>
+        <option value="3h">3 часа</option>
+        <option value="12h">12 часов</option>
+        <option value="24h">24 часа</option>
+        <option value="3d">3 дня</option>
+        <option value="7d">Неделя</option>
+      </select>
+    </div>
 
-</div>
-
-<div class="new-task" onclick="alert('Форма создания задачи')">
-+ Новая задача
-</div>
-
-</div>
-
-<div class="content">
-<div class="section">Сегодня</div>
-<div id="tasks-container"></div>
-</div>
-
+    <button class="submit-btn" onclick="createTask()">Создать</button>
+    <button class="close-btn" onclick="closeTaskModal()">Отмена</button>
+  </div>
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
-
 const tg = window.Telegram.WebApp;
 tg.ready();
 tg.expand();
 
-const API_URL = "https://family-influence-backend.onrender.com";
+const API = "https://family-influence-backend.onrender.com"; // замени на свой URL
 
 let currentUser = null;
 let tasks = [];
+let wishes = [];
+let members = [];
+let taskType = "personal";
 
-async function api(path, options={}){
-const res = await fetch(API_URL+path,{
-headers:{ "Content-Type":"application/json" },
-...options
+// API helper
+async function api(path, opt = {}) {
+  const res = await fetch(API + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opt
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  return res.json();
+}
+
+// Инициализация
+async function init() {
+  const user = tg.initDataUnsafe?.user;
+  if (!user) return;
+
+  currentUser = await api("/api/auth", {
+    method: "POST",
+    body: JSON.stringify({
+      telegram_id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name || ""
+    })
+  });
+
+  if (!currentUser.family_id) {
+    renderNoFamilyScreen(user.first_name);
+  } else {
+    renderMainApp(user.first_name);
+  }
+}
+
+// Экран без семьи
+function renderNoFamilyScreen(firstName) {
+  document.querySelector(".app").innerHTML = `
+    <div class="no-family-screen">
+      <h2>👋 Привет, ${firstName}!</h2>
+      <p>У вас пока нет семьи. Создайте новую или присоединитесь к существующей.</p>
+      <button class="button" onclick="createFamily()">Создать семью</button>
+      <button class="button" onclick="joinFamily()">Присоединиться по коду</button>
+    </div>
+  `;
+}
+
+// Основное приложение
+function renderMainApp(firstName) {
+  document.querySelector(".app").innerHTML = `
+    <div class="main-app">
+      <div class="header">
+        <div class="tabs">
+          <div class="tab active" data-tab="tasks">
+            <svg viewBox="0 0 24 24"><line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="12" y2="17"/></svg>
+          </div>
+          <div class="tab" data-tab="wishes">
+            <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8V4"/><path d="M8 4h8"/></svg>
+          </div>
+          <div class="tab" data-tab="members">
+            <svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/></svg>
+          </div>
+          <div class="tab" data-tab="settings">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3"/></svg>
+          </div>
+        </div>
+
+        <div class="header-glass">
+          <div class="title-row">
+            <h1>Семейные дела</h1>
+            <div class="family-count">👥 <span id="family-count">0</span></div>
+          </div>
+          <div class="user-block">
+            <div class="avatar" id="avatar"></div>
+            <div class="user-info">
+              <span id="user-name">${firstName}</span><br>
+              <span id="user-stats"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="new-task" onclick="openCreateTaskModal()">+ Новая задача</div>
+      </div>
+
+      <div class="content">
+        <div id="tasks" class="section active"></div>
+        <div id="wishes" class="section"></div>
+        <div id="members" class="section"></div>
+        <div id="settings" class="section">
+          <div class="card settings-item" onclick="showInviteCode()">🔑 Код приглашения</div>
+          <div class="card settings-item" onclick="leaveFamily()">🚪 Выйти из семьи</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  initDomElements();
+  loadAll();
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    };
+  });
+}
+
+// Создание семьи
+async function createFamily() {
+  const name = prompt("Введите название семьи", "Моя семья");
+  if (!name) return;
+
+  try {
+    const data = await api("/api/families", {
+      method: "POST",
+      body: JSON.stringify({ name, user_id: currentUser.id })
+    });
+
+    currentUser.family_id = data.id;
+    alert(`✅ Семья создана! Код для приглашения: ${data.invite_code}`);
+    renderMainApp(currentUser.first_name);
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// Присоединение к семье
+async function joinFamily() {
+  const code = prompt("Введите код приглашения");
+  if (!code) return;
+
+  try {
+    const data = await api("/api/families/join", {
+      method: "POST",
+      body: JSON.stringify({ invite_code: code, user_id: currentUser.id })
+    });
+
+    currentUser.family_id = data.id;
+    alert("✅ Вы присоединились к семье!");
+    renderMainApp(currentUser.first_name);
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// Элементы DOM (будут инициализированы после renderMainApp)
+let avatarEl, userNameEl, userStatsEl, familyCountEl, tasksContainer, wishesContainer, membersContainer;
+
+function initDomElements() {
+  avatarEl = document.getElementById("avatar");
+  userNameEl = document.getElementById("user-name");
+  userStatsEl = document.getElementById("user-stats");
+  familyCountEl = document.getElementById("family-count");
+  tasksContainer = document.getElementById("tasks");
+  wishesContainer = document.getElementById("wishes");
+  membersContainer = document.getElementById("members");
+}
+
+// Загрузка всех данных
+async function loadAll() {
+  await loadFamilyCount();
+  if (currentUser.family_id) {
+    await Promise.all([
+      loadTasks(),
+      loadWishes(),
+      loadMembers()
+    ]);
+    await loadAvatar(currentUser.telegram_id); // передаём telegram_id
+  } else {
+    userStatsEl.innerText = "Нет семьи";
+  }
+}
+
+async function loadFamilyCount() {
+  try {
+    const data = await api("/api/families/count");
+    if (familyCountEl) familyCountEl.innerText = data.count;
+  } catch (e) {
+    console.warn("Не удалось загрузить счётчик семей", e);
+  }
+}
+
+async function loadAvatar(telegramId) {
+  try {
+    const data = await api("/api/avatar/" + telegramId);
+    if (data.url) {
+      avatarEl.innerHTML = `<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    } else {
+      avatarEl.innerText = currentUser.first_name[0];
+    }
+  } catch (e) {
+    avatarEl.innerText = currentUser.first_name[0];
+  }
+}
+
+// ЗАДАЧИ
+async function loadTasks() {
+  try {
+    tasks = await api("/api/tasks?family_id=" + currentUser.family_id);
+    renderTasks();
+  } catch (e) {
+    console.warn("Ошибка загрузки задач", e);
+    if (tasksContainer) tasksContainer.innerHTML = '<div class="card">Ошибка загрузки</div>';
+  }
+}
+
+function renderTasks() {
+  if (!tasksContainer) return;
+  tasksContainer.innerHTML = "";
+  const now = new Date();
+
+  let active = 0, overdue = 0;
+
+  tasks.forEach(t => {
+    const isOver = new Date(t.deadline) < now;
+    if (isOver) overdue++; else active++;
+
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="task-header">
+        <span class="task-title">${escapeHtml(t.title)}</span>
+        <span class="badge">${isOver ? "Просрочено" : "Активна"}</span>
+      </div>
+      ${t.description ? `<div class="task-meta">${escapeHtml(t.description)}</div>` : ''}
+      <div class="task-meta">${new Date(t.deadline).toLocaleString()}</div>
+      <div class="task-actions">
+        ${t.assignee_id === currentUser.id ? `<button class="btn-complete" onclick="completeTask(${t.id})">✅ Выполнено</button>` : ''}
+        ${t.creator_id === currentUser.id ? `<button class="btn-delete" onclick="deleteTask(${t.id})">🗑️ Удалить</button>` : ''}
+      </div>
+    `;
+    tasksContainer.appendChild(div);
+  });
+
+  if (userStatsEl) {
+    userStatsEl.innerText = `${active} ${pluralize(active, "активная", "активные", "активных")} · ${overdue} ${pluralize(overdue, "просроченная", "просроченные", "просроченных")}`;
+  }
+}
+
+async function completeTask(taskId) {
+  if (!confirm("Отметить задачу как выполненную?")) return;
+  try {
+    await api("/api/tasks/" + taskId, { method: "DELETE" });
+    await loadTasks();
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+async function deleteTask(taskId) {
+  if (!confirm("Удалить задачу?")) return;
+  try {
+    await api("/api/tasks/" + taskId, { method: "DELETE" });
+    await loadTasks();
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// ЖЕЛАНИЯ
+async function loadWishes() {
+  try {
+    const data = await api("/api/wishes?family_id=" + currentUser.family_id);
+    renderWishes(data);
+  } catch (e) {
+    console.warn("Ошибка загрузки желаний", e);
+    if (wishesContainer) wishesContainer.innerHTML = '<div class="card">Ошибка загрузки</div>';
+  }
+}
+
+function renderWishes(wishes) {
+  if (!wishesContainer) return;
+  wishesContainer.innerHTML = "";
+  if (!wishes.length) {
+    wishesContainer.innerHTML = '<div class="card">Нет желаний</div>';
+    return;
+  }
+  wishes.forEach(w => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="wish-item">
+        <div>
+          <div>${escapeHtml(w.title)}</div>
+          ${w.description ? `<div style="font-size:13px; color:#a0b0c0;">${escapeHtml(w.description)}</div>` : ''}
+        </div>
+        <div class="wish-author">${w.user?.first_name || ''}</div>
+      </div>
+      <div class="wish-actions">
+        <button class="btn-complete" onclick="completeWish(${w.id})">✅ Исполнено</button>
+        ${w.user_id === currentUser.id ? `<button class="btn-delete" onclick="deleteWish(${w.id})">🗑️ Удалить</button>` : ''}
+      </div>
+    `;
+    wishesContainer.appendChild(div);
+  });
+}
+
+async function completeWish(wishId) {
+  if (!confirm("Отметить желание как исполненное?")) return;
+  try {
+    await api("/api/wishes/" + wishId, { method: "DELETE" });
+    await loadWishes();
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+async function deleteWish(wishId) {
+  if (!confirm("Удалить желание?")) return;
+  try {
+    await api("/api/wishes/" + wishId, { method: "DELETE" });
+    await loadWishes();
+  } catch (e) {
+    alert("Ошибка: " + e.message);
+  }
+}
+
+// УЧАСТНИКИ
+async function loadMembers() {
+  try {
+    const data = await api("/api/users?family_id=" + currentUser.family_id);
+    renderMembers(data);
+  } catch (e) {
+    console.warn("Ошибка загрузки участников", e);
+    if (membersContainer) membersContainer.innerHTML = '<div class="card">Ошибка загрузки</div>';
+  }
+}
+
+function renderMembers(members) {
+  if (!membersContainer) return;
+  membersContainer.innerHTML = "";
+  if (!members.length) {
+    membersContainer.innerHTML = '<div class="card">Нет участников</div>';
+    return;
+  }
+  members.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "card member-card";
+    div.innerHTML = `
+      <div class="member-avatar">${m.first_name[0]}</div>
+      <div>
+        <div class="member-name">${escapeHtml(m.first_name)} ${escapeHtml(m.last_name || '')}</div>
+        <div class="member-role">${m.id === currentUser.id ? '⚡ Это вы' : '👤 Участник'}</div>
+      </div>
+    `;
+    membersContainer.appendChild(div);
+  });
+}
+
+// МОДАЛКА СОЗДАНИЯ ЗАДАЧИ
+function openCreateTaskModal() {
+  if (!currentUser?.family_id) {
+    alert("Сначала нужно создать или присоединиться к семье.");
+    return;
+  }
+  document.getElementById("taskModal").classList.add("active");
+  fillTimeSelects();
+}
+
+function closeTaskModal() {
+  document.getElementById("taskModal").classList.remove("active");
+}
+
+function fillTimeSelects() {
+  const hourSelect = document.getElementById("taskHour");
+  const minuteSelect = document.getElementById("taskMinute");
+  if (hourSelect.children.length === 0) {
+    for (let i = 0; i < 24; i++) {
+      hourSelect.innerHTML += `<option value="${i}">${i.toString().padStart(2, '0')}</option>`;
+    }
+  }
+  if (minuteSelect.children.length === 0) {
+    for (let i = 0; i < 60; i += 10) {
+      minuteSelect.innerHTML += `<option value="${i}">${i.toString().padStart(2, '0')}</option>`;
+    }
+  }
+}
+
+function setTaskType(type) {
+  taskType = type;
+  document.getElementById("typePersonal").classList.toggle("active", type === "personal");
+  document.getElementById("typeDeadline").classList.toggle("active", type === "deadline");
+  document.getElementById("personalBlock").style.display = type === "personal" ? "block" : "none";
+  document.getElementById("deadlineBlock").style.display = type === "deadline" ? "block" : "none";
+}
+
+async function createTask() {
+  const title = document.getElementById("taskTitle").value.trim();
+  if (!title) return alert("Введите название задачи");
+
+  const description = document.getElementById("taskDesc").value.trim() || null;
+  let deadline;
+
+  if (taskType === "personal") {
+    const now = new Date();
+    const hour = parseInt(document.getElementById("taskHour").value);
+    const minute = parseInt(document.getElementById("taskMinute").value);
+    deadline = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      hour,
+      minute,
+      0
+    ).toISOString();
+  } else {
+    const now = new Date();
+    const opt = document.getElementById("deadlineOption").value;
+    const ms = {
+      "1h": 3600000,
+      "3h": 3 * 3600000,
+      "12h": 12 * 3600000,
+      "24h": 24 * 3600000,
+      "3d": 3 * 86400000,
+      "7d": 7 * 86400000
+    }[opt];
+    deadline = new Date(now.getTime() + ms).toISOString();
+  }
+
+  try {
+    await api("/api/tasks", {
+      method: "POST",
+      body: JSON.stringify({
+        title,
+        description,
+        deadline,
+        family_id: currentUser.family_id,
+        assignee_id: currentUser.id, // пока назначаем на себя
+        creator_id: currentUser.id
+      })
+    });
+
+    closeTaskModal();
+    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDesc").value = "";
+    await loadTasks();
+  } catch (e) {
+    alert("Ошибка при создании задачи: " + e.message);
+  }
+}
+
+// НАСТРОЙКИ
+async function showInviteCode() {
+  try {
+    const data = await api("/api/families/" + currentUser.family_id);
+    alert(`🔑 Код приглашения: ${data.invite_code}`);
+  } catch (e) {
+    alert("Не удалось получить код");
+  }
+}
+
+function leaveFamily() {
+  if (confirm("Точно выйти из семьи?")) {
+    // TODO: реализовать выход (обновить family_id = null)
+  }
+}
+
+// УТИЛИТЫ
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function pluralize(count, one, few, many) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+// Закрытие модалки по клику на фон
+document.getElementById("taskModal").addEventListener("click", (e) => {
+  if (e.target.id === "taskModal") closeTaskModal();
 });
-return res.json();
-}
 
-function statWord(count){
-if(count===1) return "активная";
-return "активных";
-}
-
-function overdueWord(count){
-if(count===1) return "просроченная";
-return "просроченных";
-}
-
-async function loadAvatar(id){
-const data = await api("/api/avatar/"+id);
-if(data.url){
-document.getElementById("avatar").innerHTML =
-`<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-}else{
-document.getElementById("avatar").innerText = currentUser.first_name[0];
-}
-}
-
-async function loadFamiliesCount(){
-const data = await api("/api/families/count");
-document.getElementById("family-count").innerText = data.count;
-}
-
-async function loadTasks(){
-if(!currentUser.family_id) return;
-tasks = await api("/api/tasks?family_id="+currentUser.family_id);
-renderTasks();
-}
-
-function renderTasks(){
-const container = document.getElementById("tasks-container");
-container.innerHTML="";
-
-const now = new Date();
-const active = tasks.filter(t=>new Date(t.deadline)>now).length;
-const overdue = tasks.filter(t=>new Date(t.deadline)<now).length;
-
-document.getElementById("user-stats").innerText =
-`${active} ${statWord(active)} · ${overdue} ${overdueWord(overdue)}`;
-
-if(tasks.length===0){
-container.innerHTML='<div class="card">Нет задач</div>';
-return;
-}
-
-tasks.forEach(t=>{
-const div=document.createElement("div");
-div.className="card";
-div.innerHTML=`
-<div class="task-header">
-<div class="task-title">${t.title}</div>
-<div class="badge">${new Date(t.deadline)<now?"Просрочено":"Активна"}</div>
-</div>
-<div class="task-meta">
-${new Date(t.deadline).toLocaleDateString()} · ${new Date(t.deadline).toLocaleTimeString().slice(0,5)}
-</div>
-`;
-container.appendChild(div);
-});
-}
-
-async function init(){
-const user = tg.initDataUnsafe?.user;
-if(!user) return;
-
-currentUser = await api("/api/auth",{
-method:"POST",
-body:JSON.stringify({
-telegram_id:user.id,
-first_name:user.first_name,
-last_name:user.last_name||""
-})
-});
-
-document.getElementById("user-name").innerText = user.first_name;
-
-await loadAvatar(user.id);
-await loadFamiliesCount();
-await loadTasks();
-}
-
+// Старт
 init();
 </script>
 
