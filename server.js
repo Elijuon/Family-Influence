@@ -22,7 +22,6 @@ const supabase = createClient(
 app.post("/api/auth", async (req, res) => {
   const { telegram_id, first_name, last_name } = req.body;
 
-  // Ищем существующего пользователя
   let { data: user } = await supabase
     .from("users")
     .select("*")
@@ -74,12 +73,16 @@ app.get("/api/tasks", async (req, res) => {
 app.post("/api/tasks", async (req, res) => {
   const { title, description, deadline, family_id, assignee_id, creator_id } = req.body;
 
+  if (!family_id) {
+    return res.status(400).json({ error: "family_id is required" });
+  }
+
   const { data, error } = await supabase
     .from("tasks")
-    .insert([{ 
-      title, 
-      description, 
-      deadline, 
+    .insert([{
+      title,
+      description,
+      deadline,
       family_id,
       assignee_id: assignee_id || null,
       creator_id: creator_id || null
@@ -100,7 +103,6 @@ app.get("/api/wishes", async (req, res) => {
   const { family_id } = req.query;
   if (!family_id) return res.json([]);
 
-  // Возвращаем желания вместе с данными пользователя, кто создал
   const { data } = await supabase
     .from("wishes")
     .select(`
@@ -137,7 +139,7 @@ app.get("/api/users", async (req, res) => {
 
   const { data } = await supabase
     .from("users")
-    .select("id, first_name, last_name")  // обязательно нужен id
+    .select("id, first_name, last_name")
     .eq("family_id", family_id);
 
   res.json(data || []);
@@ -154,8 +156,6 @@ app.get("/api/families/count", async (req, res) => {
 });
 
 /* ================= AVATAR (заглушка) ================= */
-// Если хочешь реальные аватарки из Telegram, нужно отдельное решение.
-// Пока просто возвращаем пустой объект, чтобы не ломать фронтенд.
 app.get("/api/avatar/:id", (req, res) => {
   res.json({ url: null });
 });
