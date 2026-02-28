@@ -22,14 +22,12 @@ const supabase = createClient(
 app.post("/api/auth", async (req, res) => {
   const { telegram_id, first_name, last_name } = req.body;
 
-  // Проверяем пользователя
   let { data: user } = await supabase
     .from("users")
     .select("*")
     .eq("telegram_id", telegram_id)
     .single();
 
-  // Если нет — создаём семью и пользователя
   if (!user) {
     const { data: family } = await supabase
       .from("families")
@@ -51,12 +49,6 @@ app.post("/api/auth", async (req, res) => {
     return res.json(newUser);
   }
 
-  // Обновляем имя
-  await supabase
-    .from("users")
-    .update({ first_name, last_name })
-    .eq("telegram_id", telegram_id);
-
   res.json(user);
 });
 
@@ -75,11 +67,11 @@ app.get("/api/tasks", async (req, res) => {
 });
 
 app.post("/api/tasks", async (req, res) => {
-  const { title, deadline, family_id } = req.body;
+  const { title, description, deadline, family_id } = req.body;
 
   const { data, error } = await supabase
     .from("tasks")
-    .insert([{ title, deadline, family_id }])
+    .insert([{ title, description, deadline, family_id }])
     .select()
     .single();
 
@@ -87,7 +79,34 @@ app.post("/api/tasks", async (req, res) => {
   res.json(data);
 });
 
-/* ================= FAMILY COUNT ================= */
+/* ================= WISHES ================= */
+
+app.get("/api/wishes", async (req, res) => {
+  const { family_id } = req.query;
+
+  const { data } = await supabase
+    .from("wishes")
+    .select("*")
+    .eq("family_id", family_id)
+    .order("created_at", { ascending: false });
+
+  res.json(data || []);
+});
+
+/* ================= USERS ================= */
+
+app.get("/api/users", async (req, res) => {
+  const { family_id } = req.query;
+
+  const { data } = await supabase
+    .from("users")
+    .select("first_name, last_name")
+    .eq("family_id", family_id);
+
+  res.json(data || []);
+});
+
+/* ================= FAMILIES COUNT ================= */
 
 app.get("/api/families/count", async (req, res) => {
   const { count } = await supabase
